@@ -11,7 +11,7 @@ The Embodied Arena evaluation framework is a comprehensive platform for **embodi
 - **Unified pipeline:** YAML configs plus `process.py` for loading, inference, and metrics—easy to extend and reproduce.
 - **Multiple evaluators:** EQA (visual QA), navigation (Nav), official Beacon3D evaluation, and others.
 
-The framework aligns with the [Embodied Arena](https://embodiedarena.com/) platform for benchmarking, leaderboard submissions, and paper reproduction.
+The framework aligns with the [Embodied Arena](https://www.embodied-arena.com/) platform for benchmarking, leaderboard submissions, and paper reproduction.
 
 ---
 
