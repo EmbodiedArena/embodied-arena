@@ -1,0 +1,22 @@
+task: openeqa-emeqa
+dataset_path: /your/path/to/embodied-eval-main/embodied_eval/data/open-eqa/
+dataset_kwargs:
+  video_dir: /your/path/to/embodied-eval-main/embodied_eval/data/open-eqa/
+load_from_disk: true
+eval_split: test
+doc_to_visual: !function process.openeqa_emeqa_doc_to_visual
+doc_to_text: !function process.openeqa_emeqa_doc_to_text
+doc_to_target: "answer"
+output_type: generate_until
+generation_kwargs:
+  max_new_tokens: 256
+  temperature: 0
+  do_sample: false
+  top_p: 1.0
+  num_beams: 1
+# metrics
+process_results: !function process.openeqa_emeqa_process_results
+metric_kwargs:
+  metric: llm_match_score
+  aggregation: !function process.openeqa_emeqa_aggregate_results
+  higher_is_better: true

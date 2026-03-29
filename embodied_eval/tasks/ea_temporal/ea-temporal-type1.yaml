@@ -1,0 +1,22 @@
+task: ea-temporal-type1
+dataset_path: /your/path/to/embodied-eval-main/embodied_eval/data/EA-Temporal/ea_temporal_type1.json
+dataset_kwargs:
+  image_dir: /your/path/to/embodied-eval-main/embodied_eval/data/EA-Temporal
+load_from_disk: true
+eval_split: null
+doc_to_visual: !function process.ea_temporal_doc_to_visual
+doc_to_text: !function process.ea_temporal_doc_to_text
+doc_to_target: !function process.ea_temporal_doc_to_target
+output_type: generate_until
+generation_kwargs:
+  max_new_tokens: 256
+  temperature: 0
+  do_sample: false
+  top_p: 1.0
+  num_beams: 1
+# metrics
+process_results: !function process.ea_temporal_process_results
+metric_kwargs:
+  metric: ea_temporal_score
+  aggregation: !function process.ea_temporal_aggregate_results
+  higher_is_better: true

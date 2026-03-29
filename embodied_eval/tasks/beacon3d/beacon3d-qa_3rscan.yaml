@@ -1,0 +1,23 @@
+task: beacon3d-qa_3rscan
+dataset_path: /your/path/to/embodied-eval-main/embodied_eval/data/Beacon3D/data/3rscan/3rscan_qa.json
+dataset_kwargs:
+  domain: 3rscan
+  point_cloud_dir: /path/to/scannet/scans
+load_from_disk: true
+doc_to_visual: !function process.beacon3d_qa_doc_to_visual
+doc_to_text: !function process.beacon3d_qa_doc_to_text
+doc_to_target: !function process.beacon3d_qa_doc_to_target
+output_type: generate_until
+generation_kwargs:
+  max_new_tokens: 256
+  temperature: 0.7
+  do_sample: true
+  top_p: 1.0
+  num_beams: 1
+# metrics
+process_results: !function process.beacon3d_qa_process_results
+metric_kwargs:
+  metric: llm_match
+  aggregation: !function process.beacon3d_qa_aggregate_results
+  higher_is_better: true
+

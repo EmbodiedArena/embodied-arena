@@ -1,0 +1,225 @@
+
+================================================================================
+处理模型: cambrain
+================================================================================
+
+处理: /your/path/to/embodied-eval-main/logs/erqa/cambrain/20260123_093759/samples_erqa.json
+  修正数量: 0
+  总正确数: 60/400 (15.00%)
+
+重新生成结果文件: /your/path/to/embodied-eval-main/logs/erqa/cambrain/20260123_093759/results_erqa.json
+  Overall Accuracy: 0.1339
+
+处理: /your/path/to/embodied-eval-main/logs/erqa/cambrain/20260128_200427/samples_erqa.json
+  修正数量: 0
+  总正确数: 149/400 (37.25%)
+
+重新生成结果文件: /your/path/to/embodied-eval-main/logs/erqa/cambrain/20260128_200427/results_erqa.json
+  Overall Accuracy: 0.3523
+
+处理: /your/path/to/embodied-eval-main/logs/erqa/cambrain/20260128_200731/samples_erqa.json
+  修正数量: 0
+  总正确数: 149/400 (37.25%)
+
+重新生成结果文件: /your/path/to/embodied-eval-main/logs/erqa/cambrain/20260128_200731/results_erqa.json
+  Overall Accuracy: 0.3523
+
+================================================================================
+处理模型: embodied_brain
+================================================================================
+
+处理: /your/path/to/embodied-eval-main/logs/erqa/embodied_brain/20260121_205143/samples_erqa.json
+  修正数量: 0
+  总正确数: 163/400 (40.75%)
+
+重新生成结果文件: /your/path/to/embodied-eval-main/logs/erqa/embodied_brain/20260121_205143/results_erqa.json
+  Overall Accuracy: 0.3827
+
+================================================================================
+处理模型: gemini-3-pro
+================================================================================
+
+处理: /your/path/to/embodied-eval-main/logs/erqa/gemini-3-pro/20260123_111657/samples_erqa.json
+  修正数量: 0
+  总正确数: 0/3 (0.00%)
+
+重新生成结果文件: /your/path/to/embodied-eval-main/logs/erqa/gemini-3-pro/20260123_111657/results_erqa.json
+  Overall Accuracy: 0.0000
+
+处理: /your/path/to/embodied-eval-main/logs/erqa/gemini-3-pro/20260123_103628/samples_erqa.json
+  修正数量: 0
+  总正确数: 0/400 (0.00%)
+
+重新生成结果文件: /your/path/to/embodied-eval-main/logs/erqa/gemini-3-pro/20260123_103628/results_erqa.json
+  Overall Accuracy: 0.0000
+
+处理: /your/path/to/embodied-eval-main/logs/erqa/gemini-3-pro/20260123_110446/samples_erqa.json
+  修正数量: 0
+  总正确数: 0/3 (0.00%)
+
+重新生成结果文件: /your/path/to/embodied-eval-main/logs/erqa/gemini-3-pro/20260123_110446/results_erqa.json
+  Overall Accuracy: 0.0000
+
+处理: /your/path/to/embodied-eval-main/logs/erqa/gemini-3-pro/20260123_112355/samples_erqa.json
+  修正数量: 0
+  总正确数: 0/3 (0.00%)
+
+重新生成结果文件: /your/path/to/embodied-eval-main/logs/erqa/gemini-3-pro/20260123_112355/results_erqa.json
+  Overall Accuracy: 0.0000
+
+处理: /your/path/to/embodied-eval-main/logs/erqa/gemini-3-pro/20260123_112232/samples_erqa.json
+  修正数量: 0
+  总正确数: 0/3 (0.00%)
+
+重新生成结果文件: /your/path/to/embodied-eval-main/logs/erqa/gemini-3-pro/20260123_112232/results_erqa.json
+  Overall Accuracy: 0.0000
+
+================================================================================
+处理模型: gpt-5.2
+================================================================================
+
+处理: /your/path/to/embodied-eval-main/logs/erqa/gpt-5.2/20260127_195922/samples_erqa.json
+  修正数量: 0
+  总正确数: 167/400 (41.75%)
+
+重新生成结果文件: /your/path/to/embodied-eval-main/logs/erqa/gpt-5.2/20260127_195922/results_erqa.json
+  Overall Accuracy: 0.4137
+
+处理: /your/path/to/embodied-eval-main/logs/erqa/gpt-5.2/20260129_111203/samples_erqa.json
+  修正数量: 0
+  总正确数: 172/400 (43.00%)
+
+重新生成结果文件: /your/path/to/embodied-eval-main/logs/erqa/gpt-5.2/20260129_111203/results_erqa.json
+  Overall Accuracy: 0.4378
+
+================================================================================
+处理模型: internvl3_5-8B
+================================================================================
+
+处理: /your/path/to/embodied-eval-main/logs/erqa/internvl3_5-8B/20260128_200255/samples_erqa.json
+  修正数量: 0
+  总正确数: 158/400 (39.50%)
+
+重新生成结果文件: /your/path/to/embodied-eval-main/logs/erqa/internvl3_5-8B/20260128_200255/results_erqa.json
+  Overall Accuracy: 0.3601
+
+处理: /your/path/to/embodied-eval-main/logs/erqa/internvl3_5-8B/20260121_211954/samples_erqa.json
+  修正数量: 0
+  总正确数: 159/400 (39.75%)
+
+重新生成结果文件: /your/path/to/embodied-eval-main/logs/erqa/internvl3_5-8B/20260121_211954/results_erqa.json
+  Overall Accuracy: 0.3634
+
+处理: /your/path/to/embodied-eval-main/logs/erqa/internvl3_5-8B/20260121_212918/samples_erqa.json
+  修正数量: 0
+  总正确数: 159/400 (39.75%)
+
+重新生成结果文件: /your/path/to/embodied-eval-main/logs/erqa/internvl3_5-8B/20260121_212918/results_erqa.json
+  Overall Accuracy: 0.3634
+
+================================================================================
+处理模型: mimo_embodied
+================================================================================
+
+处理: /your/path/to/embodied-eval-main/logs/erqa/mimo_embodied/20260124_225900/samples_erqa.json
+  修正数量: 0
+  总正确数: 162/400 (40.50%)
+
+重新生成结果文件: /your/path/to/embodied-eval-main/logs/erqa/mimo_embodied/20260124_225900/results_erqa.json
+  Overall Accuracy: 0.3887
+
+处理: /your/path/to/embodied-eval-main/logs/erqa/mimo_embodied/20260124_224116/samples_erqa.json
+  修正数量: 0
+  总正确数: 163/400 (40.75%)
+
+重新生成结果文件: /your/path/to/embodied-eval-main/logs/erqa/mimo_embodied/20260124_224116/results_erqa.json
+  Overall Accuracy: 0.3950
+
+处理: /your/path/to/embodied-eval-main/logs/erqa/mimo_embodied/20260124_212035/samples_erqa.json
+  修正数量: 0
+  总正确数: 163/400 (40.75%)
+
+重新生成结果文件: /your/path/to/embodied-eval-main/logs/erqa/mimo_embodied/20260124_212035/results_erqa.json
+  Overall Accuracy: 0.3950
+
+处理: /your/path/to/embodied-eval-main/logs/erqa/mimo_embodied/20260124_222316/samples_erqa.json
+  修正数量: 0
+  总正确数: 162/400 (40.50%)
+
+重新生成结果文件: /your/path/to/embodied-eval-main/logs/erqa/mimo_embodied/20260124_222316/results_erqa.json
+  Overall Accuracy: 0.3887
+
+处理: /your/path/to/embodied-eval-main/logs/erqa/mimo_embodied/20260120_204044/samples_erqa.json
+  修正 Doc ID 108: False -> True (提取='A', 目标='A')
+  修正 Doc ID 204: False -> True (提取='C', 目标='C')
+  修正 Doc ID 252: False -> True (提取='D', 目标='D')
+  修正 Doc ID 276: False -> True (提取='B', 目标='B')
+  修正 Doc ID 300: False -> True (提取='A', 目标='A')
+  修正 Doc ID 318: False -> True (提取='A', 目标='A')
+  修正 Doc ID 187: False -> True (提取='A', 目标='A')
+  修正 Doc ID 193: False -> True (提取='A', 目标='A')
+  修正 Doc ID 199: False -> True (提取='A', 目标='A')
+  修正 Doc ID 271: False -> True (提取='B', 目标='B')
+  修正 Doc ID 277: False -> True (提取='D', 目标='D')
+  修正 Doc ID 283: False -> True (提取='B', 目标='B')
+  修正 Doc ID 331: False -> True (提取='D', 目标='D')
+  修正 Doc ID 367: False -> True (提取='A', 目标='A')
+  修正 Doc ID 68: False -> True (提取='B', 目标='B')
+  修正 Doc ID 176: False -> True (提取='C', 目标='C')
+  修正 Doc ID 302: False -> True (提取='A', 目标='A')
+  修正 Doc ID 350: False -> True (提取='C', 目标='C')
+  修正 Doc ID 374: False -> True (提取='A', 目标='A')
+  修正 Doc ID 213: False -> True (提取='C', 目标='C')
+  修正 Doc ID 339: False -> True (提取='A', 目标='A')
+  修正 Doc ID 142: False -> True (提取='A', 目标='A')
+  修正 Doc ID 370: False -> True (提取='A', 目标='A')
+  修正 Doc ID 388: False -> True (提取='A', 目标='A')
+  修正 Doc ID 394: False -> True (提取='C', 目标='C')
+  修正 Doc ID 11: False -> True (提取='C', 目标='C')
+  修正 Doc ID 221: False -> True (提取='A', 目标='A')
+  修正数量: 27
+  总正确数: 117/400 (29.25%)
+
+重新生成结果文件: /your/path/to/embodied-eval-main/logs/erqa/mimo_embodied/20260120_204044/results_erqa.json
+  Overall Accuracy: 0.2776
+
+================================================================================
+处理模型: nuoyin
+================================================================================
+
+处理: /your/path/to/embodied-eval-main/logs/erqa/nuoyin/20260120_224137/samples_erqa.json
+  修正数量: 0
+  总正确数: 157/400 (39.25%)
+
+重新生成结果文件: /your/path/to/embodied-eval-main/logs/erqa/nuoyin/20260120_224137/results_erqa.json
+  Overall Accuracy: 0.3720
+
+================================================================================
+处理模型: pelican_vl
+================================================================================
+
+处理: /your/path/to/embodied-eval-main/logs/erqa/pelican_vl/20260120_231819/samples_erqa.json
+  修正数量: 0
+  总正确数: 158/400 (39.50%)
+
+重新生成结果文件: /your/path/to/embodied-eval-main/logs/erqa/pelican_vl/20260120_231819/results_erqa.json
+  Overall Accuracy: 0.3789
+
+================================================================================
+处理模型: qwen3-vl-8b-instruct
+================================================================================
+
+处理: /your/path/to/embodied-eval-main/logs/erqa/qwen3-vl-8b-instruct/20260121_211254/samples_erqa.json
+  修正数量: 0
+  总正确数: 156/400 (39.00%)
+
+重新生成结果文件: /your/path/to/embodied-eval-main/logs/erqa/qwen3-vl-8b-instruct/20260121_211254/results_erqa.json
+  Overall Accuracy: 0.3864
+
+================================================================================
+修正完成总结
+================================================================================
+总修正数量: 27
+处理模型数: 22
+
+修正摘要已保存到: /your/path/to/embodied-eval-main/logs/erqa/accuracy_fix_summary.json

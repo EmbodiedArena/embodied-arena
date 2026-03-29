@@ -1,0 +1,14 @@
+env: "EBNavEnv"
+# Environment configuration for EBNavEnv
+# Add any environment-specific parameters here
+eval_set: 'base'
+exp_name: 'test_base'
+down_sample_ratio: 1.0
+fov: 100
+multiview: False
+boundingbox: False
+multistep: False
+resolution: 500
+selected_indexes: []
+obs_key: 'head_rgb'
+# Additional parameters can be added as needed

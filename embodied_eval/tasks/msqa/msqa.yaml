@@ -1,0 +1,26 @@
+task: msqa
+dataset_path: /data/arena/datasets/msr3d/msqa
+dataset_kwargs:
+  qa_path: /data/arena/datasets/msr3d/msqa/msqa.json
+  image_dir: /data/arena/datasets/msr3d/msqa/imgs/
+  video_dir: /data/arena/datasets/msr3d/msqa/videos/
+  scan_info_path: /data/arena/datasets/msr3d/msqa/msqa_inst_info.json
+  attr_info_path: /data/arena/datasets/msr3d/msqa/msqa_attribute.json
+load_from_disk: true
+eval_split: test
+doc_to_visual: !function process.msqa_doc_to_visual
+doc_to_text: !function process.msqa_doc_to_text
+doc_to_target: "answers"
+output_type: generate_until
+generation_kwargs:
+  max_new_tokens: 256
+  temperature: 0
+  do_sample: false
+  top_p: 1.0
+  num_beams: 1
+# metrics
+process_results: !function process.msqa_process_results
+metric_kwargs:
+  metric: msqa_score
+  aggregation: !function process.msqa_aggregate_results
+  higher_is_better: true

@@ -1,0 +1,9 @@
+.vscode
+__pycache__
+*.zip
+*.tar.gz
+.DS_Store
+.git
+
+/embodied_eval/data
+/logs
