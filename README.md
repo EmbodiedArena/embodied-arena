@@ -72,23 +72,33 @@ pip install -r requirements.txt
 
 The entry point is `python -m embodied_eval` with model, task, and evaluator specified.
 
-**Option A — Benchmark scripts (recommended)**
+**Option A — `run_eval.sh` (one-click batch, recommended)**
 
-Many benchmarks provide:
+Each benchmark under `embodied_eval/tasks/<benchmark>/` provides a **`run_eval.sh`** in the same directory as its **`scripts/`** folder. That layout is the standard “one command to run many models” path (use **bash** on Linux; the driver does not change your current working directory).
 
-- **`run_eval.sh`:** Generic script; edit `--model`, `--model_args`, `--output_path`, etc.
-- **`scripts/`:** Per-model launchers (e.g. `qwen2_5_vl.sh`, `pelican_vl.sh`) with full configs—run as-is after paths are set.
+| Item | Description |
+|------|-------------|
+| **Driver script** | `embodied_eval/tasks/<benchmark>/run_eval.sh` |
+| **Per-model scripts** | `embodied_eval/tasks/<benchmark>/scripts/*.sh` |
+| **What gets run** | Inside `run_eval.sh`, the bash array **`RUN_SCRIPTS`** lists **basenames only** (e.g. `qwen3_vl.sh`). The driver runs `bash` on `scripts/<basename>` in order. Edit that array to add, remove, or reorder models. Some benchmarks omit non-eval helpers (data prep, splitters, `all.sh`-style aggregators); see comments in each `run_eval.sh`. |
+| **Output & errors** | Each subscript’s stdout/stderr is printed to your terminal as usual. If one script fails, the driver continues with the next and prints a **summary** at the end; the process exits with code **1** if any run failed or a listed file was missing. |
+
+**If a subscript fails:** Open the corresponding **`embodied_eval/tasks/<benchmark>/scripts/<name>.sh`** and fill in what that template expects—commonly **`OPENAI_API_KEY` / `OPENAI_API_BASE`** (LLM-as-judge or API models), **checkpoint and data paths** (`model_name_or_path`, `--output_path`), **`CUDA_VISIBLE_DEVICES`**, or **conda** `source`/`activate` lines—then re-run.
 
 ```bash
-# Using run_eval.sh (edit parameters inside first)
 cd embodied-eval-main
 bash embodied_eval/tasks/robovqa/run_eval.sh
+```
 
-# Or a model-specific script under scripts/
+**Option A2 — Single model script**
+
+Run one launcher directly (after editing that file):
+
+```bash
 bash embodied_eval/tasks/vabench/scripts/qwen2_5_vl.sh
 ```
 
-To evaluate a new model, add a script under that benchmark’s `scripts/` (e.g. `your_model.sh`) by copying an existing one and adjusting `--model`, `--model_args`, and `--output_path`.
+To evaluate a new model, add `your_model.sh` under that benchmark’s `scripts/` (copy an existing launcher and adjust `--model`, `--model_args`, `--output_path`), and add `"your_model.sh"` to **`RUN_SCRIPTS`** in `run_eval.sh` if you want it included in the batch.
 
 **Option B — Direct CLI**
 
@@ -275,7 +285,8 @@ For more detail, see `DEVELOPER_GUIDE.md`.
 
 **`embodied_eval/tasks/<benchmark>/`**
 
-- Most benchmarks include a `README.md` for data prep, how to run, and interpreting metrics.
+- **`run_eval.sh`** — Batch driver next to `scripts/`; runs each basename listed in the embedded **`RUN_SCRIPTS`** array against `scripts/<name>.sh` (see §3.2).
+- Most benchmarks include a **`README.md`** for data prep, how to run, and interpreting metrics.
 
 ---
 
@@ -283,7 +294,7 @@ For more detail, see `DEVELOPER_GUIDE.md`.
 
 **Q1: How do I change parallelism?**
 
-Use `accelerate launch --num_processes=N` with `CUDA_VISIBLE_DEVICES`. See each benchmark’s `run_eval.sh`.
+Edit the per-model script under `embodied_eval/tasks/<benchmark>/scripts/` (e.g. `CUDA_VISIBLE_DEVICES`, `accelerate launch --num_processes=N`), or pass the same flags when using **Option B** (direct CLI).
 
 **Q2: How do I add a new metric?**
 
