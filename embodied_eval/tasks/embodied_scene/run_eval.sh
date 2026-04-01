@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# ERQA: 依次运行下方 RUN_SCRIPTS 中列出的 scripts/ 内脚本（仅 basename）。
+# EmbodiedScene: 依次运行下方 RUN_SCRIPTS 中列出的 scripts/ 内脚本（仅 basename）。
 # 约定：本文件与 scripts/ 目录始终同级；本脚本不修改当前工作目录。
 # 子脚本的标准输出/错误输出直接打到当前终端。
-# 未列入 all.sh（总览备忘脚本）。
+# 未列入 all.sh（总览备忘脚本，非单模型流程）。
 
 set +e
 
@@ -11,18 +11,23 @@ SCRIPTS_DIR="$THIS_DIR/scripts"
 
 # ---------------------------------------------------------------------------
 # 在此数组中填写要运行的脚本文件名（仅 scripts/ 下的文件名）
-# 可按需增删或调整顺序
+# 默认包含各单模型评测脚本；可按需增删顺序或注释掉某行（从数组中移除）
 # ---------------------------------------------------------------------------
 RUN_SCRIPTS=(
-  cambrain.sh
+  cambrian.sh
+  cosmos_reason1.sh
   embodied_brain.sh
-  embodied_vlm.sh
-  gemini_3_pro.sh
+  gemini_2_5_pro.sh
+  gpt_5_2.sh
   iflybot_vlm.sh
-  nuoyin.sh
+  internvl3_5.sh
+  mimo_embodied.sh
+  o3.sh
   pelican_vl.sh
-  rynnbrain_8b.sh
-  step3_vl.sh
+  qwen_vl_max.sh
+  qwen3_vl.sh
+  robobrain2.sh
+  rynnbrain.sh
   thinker_vl.sh
 )
 
@@ -37,7 +42,7 @@ if [[ ${#RUN_SCRIPTS[@]} -eq 0 ]]; then
 fi
 
 echo "========================================"
-echo "ERQA run_eval"
+echo "EmbodiedScene run_eval"
 echo "========================================"
 echo "run_eval 所在目录: $THIS_DIR"
 echo "scripts 目录:      $SCRIPTS_DIR"
@@ -88,7 +93,7 @@ for f in "${RUN_SCRIPTS[@]}"; do
 done
 
 echo "========================================"
-echo "ERQA run_eval 汇总"
+echo "EmbodiedScene run_eval 汇总"
 echo "========================================"
 echo "成功: ${#ok_list[@]}"
 if [[ ${#ok_list[@]} -gt 0 ]]; then

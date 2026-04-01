@@ -1,77 +1,120 @@
-#!/bin/bash
-# Where2Place 评估脚本 - PelicanVL 模型
+#!/usr/bin/env bash
+# Where2Place: 依次运行下方 RUN_SCRIPTS 中列出的 scripts/ 内脚本（仅 basename）。
+# 约定：本文件与 scripts/ 目录始终同级；本脚本不修改当前工作目录。
+# 子脚本的标准输出/错误输出直接打到当前终端。
+# utils/quick_test.sh、utils/thinker_vl.sh 不在 scripts/ 下，未列入。
 
-# 切换到项目根目录
-cd "$(dirname "$0")/../../.." || exit
+set +e
 
-# ============ 配置参数 ============
-# 模型路径（修改为你的实际路径）
-MODEL_PATH="X-Humanoid/Pelican1.0-VL-7B"
-# 或使用本地路径：
-# MODEL_PATH="/data/models/Pelican1.0-VL-7B"
+THIS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPTS_DIR="$THIS_DIR/scripts"
 
-# GPU 设置
-GPU_ID=0
+# ---------------------------------------------------------------------------
+# 在此数组中填写要运行的脚本文件名（仅 scripts/ 下的文件名）
+# 可按需增删或调整顺序
+# ---------------------------------------------------------------------------
+RUN_SCRIPTS=(
+  cambrian.sh
+  embodied_brain.sh
+  embodied_vlm.sh
+  gemini3-pro.sh
+  gpt-5_2.sh
+  internvl3_5-8B.sh
+  mimo_embodied.sh
+  nuoyin.sh
+  qwen3_vl.sh
+  rynnbrain_8b.sh
+  step3_vl.sh
+  thinker_vl.sh
+  wall-oss-fast.sh
+)
 
-# 输出路径
-OUTPUT_BASE="./logs/where2place/pelican_vl_7b"
+if [[ ! -d "$SCRIPTS_DIR" ]]; then
+  echo "[run_eval] 错误: 与 run_eval.sh 同级的 scripts 目录不存在: $SCRIPTS_DIR"
+  exit 1
+fi
 
-# 批次大小
-BATCH_SIZE=1
-
-# 视频处理参数
-MAX_NUM_FRAMES=32
-FPS=2
-
-# ============ 运行评估 ============
-# 获取随机端口
-PORT=$(python -c "import socket; s=socket.socket(); s.bind(('', 0)); print(s.getsockname()[1]); s.close()")
+if [[ ${#RUN_SCRIPTS[@]} -eq 0 ]]; then
+  echo "[run_eval] 错误: RUN_SCRIPTS 数组为空，请在 run_eval.sh 中填写要运行的脚本名"
+  exit 1
+fi
 
 echo "========================================"
-echo "Where2Place 评估 - PelicanVL"
+echo "Where2Place run_eval"
 echo "========================================"
-echo "模型: $MODEL_PATH"
-echo "GPU: $GPU_ID"
-echo "输出: $OUTPUT_BASE"
+echo "run_eval 所在目录: $THIS_DIR"
+echo "scripts 目录:      $SCRIPTS_DIR"
+echo "当前工作目录:      $(pwd)"
+echo ""
+echo "即将依次运行以下脚本（共 ${#RUN_SCRIPTS[@]} 个），输出直接显示在当前终端:"
+echo "----------------------------------------"
+i=1
+for f in "${RUN_SCRIPTS[@]}"; do
+  echo "  [$i] scripts/$f"
+  ((i++)) || true
+done
+echo "----------------------------------------"
+echo ""
+echo "[run_eval] 开始批量执行…"
+echo ""
+
+ok_list=()
+fail_list=()
+
+for f in "${RUN_SCRIPTS[@]}"; do
+  path="$SCRIPTS_DIR/$f"
+  if [[ ! -f "$path" ]]; then
+    echo "========================================"
+    echo "[run_eval] 跳过: scripts/$f（文件不存在）"
+    echo "========================================"
+    fail_list+=("$f (missing)")
+    echo ""
+    continue
+  fi
+
+  echo "========================================"
+  echo "[run_eval] 开始运行: scripts/$f"
+  echo "========================================"
+
+  bash "$path"
+  ec=$?
+
+  echo ""
+  if [[ $ec -eq 0 ]]; then
+    echo "[run_eval] 结束运行: scripts/$f — 退出码 0（成功）"
+    ok_list+=("$f")
+  else
+    echo "[run_eval] 结束运行: scripts/$f — 退出码 $ec（失败，继续后续脚本）"
+    fail_list+=("$f ($ec)")
+  fi
+  echo ""
+done
+
 echo "========================================"
+echo "Where2Place run_eval 汇总"
+echo "========================================"
+echo "成功: ${#ok_list[@]}"
+if [[ ${#ok_list[@]} -gt 0 ]]; then
+  for x in "${ok_list[@]}"; do
+    echo "  - $x"
+  done
+else
+  echo "  （无）"
+fi
 echo ""
+echo "失败或跳过: ${#fail_list[@]}"
+if [[ ${#fail_list[@]} -gt 0 ]]; then
+  for x in "${fail_list[@]}"; do
+    echo "  - $x"
+  done
+else
+  echo "  （无）"
+fi
+echo "========================================"
+echo "[run_eval] 全部任务已结束。"
+echo "========================================"
 
-# 任务 1: Point 检测
-echo "[1/2] 运行 Point 检测任务..."
-CUDA_VISIBLE_DEVICES=$GPU_ID accelerate launch \
-    --num_processes=1 \
-    --main_process_port=$PORT \
-    -m embodied_eval \
-    --model pelican_vl \
-    --model_args model_name_or_path=$MODEL_PATH,max_num_frames=$MAX_NUM_FRAMES,fps=$FPS \
-    --evaluator eqa \
-    --tasks where2place-point \
-    --batch_size $BATCH_SIZE \
-    --output_path ${OUTPUT_BASE}_point
-
-echo ""
-echo "[1/2] Point 任务完成"
-echo ""
-
-# # 任务 2: BBox 检测
-# echo "[2/2] 运行 BBox 检测任务..."
-# CUDA_VISIBLE_DEVICES=$GPU_ID accelerate launch \
-#     --num_processes=1 \
-#     --main_process_port=$PORT \
-#     -m embodied_eval \
-#     --model pelican_vl \
-#     --model_args model_name_or_path=$MODEL_PATH,max_num_frames=$MAX_NUM_FRAMES,fps=$FPS \
-#     --evaluator eqa \
-#     --tasks where2place-bbox \
-#     --batch_size $BATCH_SIZE \
-#     --output_path ${OUTPUT_BASE}_bbox
-
-# echo ""
-# echo "[2/2] BBox 任务完成"
-# echo ""
-# echo "========================================"
-# echo "所有任务完成！"
-# echo "结果保存在:"
-# echo "  - Point: ${OUTPUT_BASE}_point"
-# echo "  - BBox:  ${OUTPUT_BASE}_bbox"
-# echo "========================================"
+if [[ ${#fail_list[@]} -gt 0 ]]; then
+  exit 1
+fi
+exit 0

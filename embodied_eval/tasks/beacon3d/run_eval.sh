@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
-# ERQA: 依次运行下方 RUN_SCRIPTS 中列出的 scripts/ 内脚本（仅 basename）。
+# Beacon3D: 依次运行下方 RUN_SCRIPTS 中列出的 scripts/ 内脚本（仅 basename）。
 # 约定：本文件与 scripts/ 目录始终同级；本脚本不修改当前工作目录。
 # 子脚本的标准输出/错误输出直接打到当前终端。
-# 未列入 all.sh（总览备忘脚本）。
 
 set +e
 
@@ -10,20 +9,12 @@ THIS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPTS_DIR="$THIS_DIR/scripts"
 
 # ---------------------------------------------------------------------------
-# 在此数组中填写要运行的脚本文件名（仅 scripts/ 下的文件名）
-# 可按需增删或调整顺序
+# 在此数组中填写要运行的脚本文件名（仅 scripts/ 下的文件名，每行一个）
 # ---------------------------------------------------------------------------
 RUN_SCRIPTS=(
-  cambrain.sh
-  embodied_brain.sh
-  embodied_vlm.sh
-  gemini_3_pro.sh
+  evaluate_beacon3d_qwen2_5_vl.sh
+  evaluate_beacon3d_official_qwen.sh
   iflybot_vlm.sh
-  nuoyin.sh
-  pelican_vl.sh
-  rynnbrain_8b.sh
-  step3_vl.sh
-  thinker_vl.sh
 )
 
 if [[ ! -d "$SCRIPTS_DIR" ]]; then
@@ -37,7 +28,7 @@ if [[ ${#RUN_SCRIPTS[@]} -eq 0 ]]; then
 fi
 
 echo "========================================"
-echo "ERQA run_eval"
+echo "Beacon3D run_eval"
 echo "========================================"
 echo "run_eval 所在目录: $THIS_DIR"
 echo "scripts 目录:      $SCRIPTS_DIR"
@@ -88,7 +79,7 @@ for f in "${RUN_SCRIPTS[@]}"; do
 done
 
 echo "========================================"
-echo "ERQA run_eval 汇总"
+echo "Beacon3D run_eval 汇总"
 echo "========================================"
 echo "成功: ${#ok_list[@]}"
 if [[ ${#ok_list[@]} -gt 0 ]]; then

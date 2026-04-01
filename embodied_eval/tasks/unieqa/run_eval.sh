@@ -1,21 +1,119 @@
-#!/bin/bash
-# UniEQA 评测脚本
+#!/usr/bin/env bash
+# UniEQA: 依次运行下方 RUN_SCRIPTS 中列出的 scripts/ 内脚本（仅 basename）。
+# 约定：本文件与 scripts/ 目录始终同级；本脚本不修改当前工作目录。
+# 子脚本的标准输出/错误输出直接打到当前终端。
+# 同目录 post_eval.sh 用于离线补分；utils/download_sens_and_extract.sh 为数据准备，均不在此列表。
 
-# 切换到项目根目录
-cd "$(dirname "$0")/../../.." || exit
+set +e
 
-# API 密钥配置 (LLM 评估必需)
-export OPENAI_API_KEY='your-api-key'
-export OPENAI_API_BASE='your-api-base' # 可选
+THIS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPTS_DIR="$THIS_DIR/scripts"
 
-# 获取随机端口
-PORT=$(python -c "import socket; s=socket.socket(); s.bind(('', 0)); print(s.getsockname()[1]); s.close()")
+# ---------------------------------------------------------------------------
+# 在此数组中填写要运行的脚本文件名（仅 scripts/ 下的文件名）
+# 可按需增删或调整顺序
+# ---------------------------------------------------------------------------
+RUN_SCRIPTS=(
+  cambrian.sh
+  embodied_brain.sh
+  embodied_vlm.sh
+  gemini_3_pro.sh
+  gpt-5.2.sh
+  internvl3_5-8B.sh
+  mimo_embodied.sh
+  nuoyin.sh
+  pelican_vl.sh
+  qwen3_vl.sh
+  rynnbrain_8b.sh
+  thinker.sh
+)
 
-# 运行评测
-CUDA_VISIBLE_DEVICES=0 accelerate launch --num_processes=1 --main_process_port=$PORT -m embodied_eval \
-    --model qwen3_vl \
-    --model_args model_name_or_path=Qwen/Qwen3-VL-4B-Instruct,max_num_frames=1 \
-    --evaluator eqa \
-    --tasks unieqa \
-    --batch_size 1 \
-    --output_path ./logs/unieqa/results
+if [[ ! -d "$SCRIPTS_DIR" ]]; then
+  echo "[run_eval] 错误: 与 run_eval.sh 同级的 scripts 目录不存在: $SCRIPTS_DIR"
+  exit 1
+fi
+
+if [[ ${#RUN_SCRIPTS[@]} -eq 0 ]]; then
+  echo "[run_eval] 错误: RUN_SCRIPTS 数组为空，请在 run_eval.sh 中填写要运行的脚本名"
+  exit 1
+fi
+
+echo "========================================"
+echo "UniEQA run_eval"
+echo "========================================"
+echo "run_eval 所在目录: $THIS_DIR"
+echo "scripts 目录:      $SCRIPTS_DIR"
+echo "当前工作目录:      $(pwd)"
+echo ""
+echo "即将依次运行以下脚本（共 ${#RUN_SCRIPTS[@]} 个），输出直接显示在当前终端:"
+echo "----------------------------------------"
+i=1
+for f in "${RUN_SCRIPTS[@]}"; do
+  echo "  [$i] scripts/$f"
+  ((i++)) || true
+done
+echo "----------------------------------------"
+echo ""
+echo "[run_eval] 开始批量执行…"
+echo ""
+
+ok_list=()
+fail_list=()
+
+for f in "${RUN_SCRIPTS[@]}"; do
+  path="$SCRIPTS_DIR/$f"
+  if [[ ! -f "$path" ]]; then
+    echo "========================================"
+    echo "[run_eval] 跳过: scripts/$f（文件不存在）"
+    echo "========================================"
+    fail_list+=("$f (missing)")
+    echo ""
+    continue
+  fi
+
+  echo "========================================"
+  echo "[run_eval] 开始运行: scripts/$f"
+  echo "========================================"
+
+  bash "$path"
+  ec=$?
+
+  echo ""
+  if [[ $ec -eq 0 ]]; then
+    echo "[run_eval] 结束运行: scripts/$f — 退出码 0（成功）"
+    ok_list+=("$f")
+  else
+    echo "[run_eval] 结束运行: scripts/$f — 退出码 $ec（失败，继续后续脚本）"
+    fail_list+=("$f ($ec)")
+  fi
+  echo ""
+done
+
+echo "========================================"
+echo "UniEQA run_eval 汇总"
+echo "========================================"
+echo "成功: ${#ok_list[@]}"
+if [[ ${#ok_list[@]} -gt 0 ]]; then
+  for x in "${ok_list[@]}"; do
+    echo "  - $x"
+  done
+else
+  echo "  （无）"
+fi
+echo ""
+echo "失败或跳过: ${#fail_list[@]}"
+if [[ ${#fail_list[@]} -gt 0 ]]; then
+  for x in "${fail_list[@]}"; do
+    echo "  - $x"
+  done
+else
+  echo "  （无）"
+fi
+echo "========================================"
+echo "[run_eval] 全部任务已结束。"
+echo "========================================"
+
+if [[ ${#fail_list[@]} -gt 0 ]]; then
+  exit 1
+fi
+exit 0

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# ERQA: 依次运行下方 RUN_SCRIPTS 中列出的 scripts/ 内脚本（仅 basename）。
+# OpenEQA: 依次运行下方 RUN_SCRIPTS 中列出的 scripts/ 内脚本（仅 basename）。
 # 约定：本文件与 scripts/ 目录始终同级；本脚本不修改当前工作目录。
 # 子脚本的标准输出/错误输出直接打到当前终端。
-# 未列入 all.sh（总览备忘脚本）。
+# 事后仅补打分请用 utils/post_eval.sh，不在此批量列表中。
 
 set +e
 
@@ -14,16 +14,20 @@ SCRIPTS_DIR="$THIS_DIR/scripts"
 # 可按需增删或调整顺序
 # ---------------------------------------------------------------------------
 RUN_SCRIPTS=(
-  cambrain.sh
+  Mimo-Embodied.sh
+  cambrian.sh
   embodied_brain.sh
   embodied_vlm.sh
-  gemini_3_pro.sh
-  iflybot_vlm.sh
+  internvl3_5-8B.sh
   nuoyin.sh
+  openai.sh
   pelican_vl.sh
+  qwen2-vl-7b-ins.sh
+  qwen2_5-vl-7b-ins.sh
+  qwen3_vl.sh
   rynnbrain_8b.sh
-  step3_vl.sh
-  thinker_vl.sh
+  step3-vl.sh
+  thinker.sh
 )
 
 if [[ ! -d "$SCRIPTS_DIR" ]]; then
@@ -37,7 +41,7 @@ if [[ ${#RUN_SCRIPTS[@]} -eq 0 ]]; then
 fi
 
 echo "========================================"
-echo "ERQA run_eval"
+echo "OpenEQA run_eval"
 echo "========================================"
 echo "run_eval 所在目录: $THIS_DIR"
 echo "scripts 目录:      $SCRIPTS_DIR"
@@ -88,7 +92,7 @@ for f in "${RUN_SCRIPTS[@]}"; do
 done
 
 echo "========================================"
-echo "ERQA run_eval 汇总"
+echo "OpenEQA run_eval 汇总"
 echo "========================================"
 echo "成功: ${#ok_list[@]}"
 if [[ ${#ok_list[@]} -gt 0 ]]; then

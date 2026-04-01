@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
-# ERQA: 依次运行下方 RUN_SCRIPTS 中列出的 scripts/ 内脚本（仅 basename）。
+# EA-Temporal: 依次运行下方 RUN_SCRIPTS 中列出的 scripts/ 内脚本（仅 basename）。
 # 约定：本文件与 scripts/ 目录始终同级；本脚本不修改当前工作目录。
 # 子脚本的标准输出/错误输出直接打到当前终端。
-# 未列入 all.sh（总览备忘脚本）。
 
 set +e
 
@@ -10,19 +9,21 @@ THIS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPTS_DIR="$THIS_DIR/scripts"
 
 # ---------------------------------------------------------------------------
-# 在此数组中填写要运行的脚本文件名（仅 scripts/ 下的文件名）
-# 可按需增删或调整顺序
+# 在此数组中填写要运行的脚本文件名（仅 scripts/ 下的文件名，每行一个）
+# 可按需增删；all.sh 与 cambrain.sh 均针对 Cambrian，环境要求不同，请择一或按需调整
 # ---------------------------------------------------------------------------
 RUN_SCRIPTS=(
+  all.sh
   cambrain.sh
   embodied_brain.sh
   embodied_vlm.sh
-  gemini_3_pro.sh
-  iflybot_vlm.sh
+  gpt.sh
+  mimo.sh
   nuoyin.sh
   pelican_vl.sh
-  rynnbrain_8b.sh
-  step3_vl.sh
+  rynnbrain.sh
+  step3.sh
+  test_iflybot.sh
   thinker_vl.sh
 )
 
@@ -37,7 +38,7 @@ if [[ ${#RUN_SCRIPTS[@]} -eq 0 ]]; then
 fi
 
 echo "========================================"
-echo "ERQA run_eval"
+echo "EA-Temporal run_eval"
 echo "========================================"
 echo "run_eval 所在目录: $THIS_DIR"
 echo "scripts 目录:      $SCRIPTS_DIR"
@@ -88,7 +89,7 @@ for f in "${RUN_SCRIPTS[@]}"; do
 done
 
 echo "========================================"
-echo "ERQA run_eval 汇总"
+echo "EA-Temporal run_eval 汇总"
 echo "========================================"
 echo "成功: ${#ok_list[@]}"
 if [[ ${#ok_list[@]} -gt 0 ]]; then

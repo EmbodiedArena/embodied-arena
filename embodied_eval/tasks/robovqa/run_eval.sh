@@ -1,60 +1,118 @@
-#!/bin/bash
-# RoboVQA 评测脚本
+#!/usr/bin/env bash
+# RoboVQA: 依次运行下方 RUN_SCRIPTS 中列出的 scripts/ 内脚本（仅 basename）。
+# 约定：本文件与 scripts/ 目录始终同级；本脚本不修改当前工作目录。
+# 子脚本的标准输出/错误输出直接打到当前终端。
+# 本目录下的 post_eval.sh、scripts/test.py 不在批量列表中。
 
-# 切换到项目根目录
-cd "$(dirname "$0")/../../.." || exit
+set +e
 
-# API密钥配置（用于LLM评估）
-# export OPENAI_API_KEY='your-api-key'
-# export OPENAI_API_BASE='your-api-base'  # 可选
+THIS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPTS_DIR="$THIS_DIR/scripts"
 
-# export OPENAI_API_KEY='your-api-key'
+# ---------------------------------------------------------------------------
+# 在此数组中填写要运行的脚本文件名（仅 scripts/ 下的文件名）
+# 可按需增删或调整顺序
+# ---------------------------------------------------------------------------
+RUN_SCRIPTS=(
+  Mimo-Embodied-7B.sh
+  cambrian.sh
+  embodied_brain.sh
+  embodied_vlm.sh
+  gemini.sh
+  nuoyin.sh
+  pelican_vl.sh
+  rynnbrain_8b.sh
+  step3_vl.sh
+  thinker.sh
+  wall_oss.sh
+)
 
-export OPENAI_API_KEY='your-api-key'
-export OPENAI_API_BASE='https://api.gpt.ge/v1'
+if [[ ! -d "$SCRIPTS_DIR" ]]; then
+  echo "[run_eval] 错误: 与 run_eval.sh 同级的 scripts 目录不存在: $SCRIPTS_DIR"
+  exit 1
+fi
 
-# 获取随机端口
-PORT=$(python -c "import socket; s=socket.socket(); s.bind(('', 0)); print(s.getsockname()[1]); s.close()")
+if [[ ${#RUN_SCRIPTS[@]} -eq 0 ]]; then
+  echo "[run_eval] 错误: RUN_SCRIPTS 数组为空，请在 run_eval.sh 中填写要运行的脚本名"
+  exit 1
+fi
 
-# 运行评测
-# CUDA_VISIBLE_DEVICES=2 accelerate launch --num_processes=1 --main_process_port=$PORT -m embodied_eval \
-#     --model qwen3_vl \
-#    --model_args model_name_or_path=/your/path/to/embodied-eval-main/embodied_eval/data/Qwen3-VL-8B-Instruct/,max_num_frames=32,fps=2,use_flash_attention_2=False \
-#     --evaluator eqa \
-#     --tasks robovqa \
-#     --batch_size 1 \
-#     --output_path ./logs/robovqa/qwen3_vl_8b
+echo "========================================"
+echo "RoboVQA run_eval"
+echo "========================================"
+echo "run_eval 所在目录: $THIS_DIR"
+echo "scripts 目录:      $SCRIPTS_DIR"
+echo "当前工作目录:      $(pwd)"
+echo ""
+echo "即将依次运行以下脚本（共 ${#RUN_SCRIPTS[@]} 个），输出直接显示在当前终端:"
+echo "----------------------------------------"
+i=1
+for f in "${RUN_SCRIPTS[@]}"; do
+  echo "  [$i] scripts/$f"
+  ((i++)) || true
+done
+echo "----------------------------------------"
+echo ""
+echo "[run_eval] 开始批量执行…"
+echo ""
 
+ok_list=()
+fail_list=()
 
-# CUDA_VISIBLE_DEVICES=2 accelerate launch --num_processes=1 --main_process_port=$PORT -m embodied_eval \
-#     --model internvl3_5 \
-#    --model_args model_name_or_path=/your/path/to/embodied-eval-main/embodied_eval/data/InternVL3_5-8B,max_num_frames=32,fps=2,use_flash_attention_2=True \
-#     --evaluator eqa \
-#     --tasks robovqa \
-#     --batch_size 1 \
-#     --output_path ./logs/robovqa/internvl3.5-8B
+for f in "${RUN_SCRIPTS[@]}"; do
+  path="$SCRIPTS_DIR/$f"
+  if [[ ! -f "$path" ]]; then
+    echo "========================================"
+    echo "[run_eval] 跳过: scripts/$f（文件不存在）"
+    echo "========================================"
+    fail_list+=("$f (missing)")
+    echo ""
+    continue
+  fi
 
-# CUDA_VISIBLE_DEVICES=6 accelerate launch --num_processes=1 --main_process_port=$PORT -m embodied_eval \
-#     --model pelican_vl \
-#    --model_args model_name_or_path=/your/path/to/embodied-eval-main/embodied_eval/data/pelican-vl/models/Pelican1.0-VL-7B,max_num_frames=32,fps=2,use_flash_attention_2=False \
-#     --evaluator eqa \
-#     --tasks robovqa \
-#     --batch_size 1 \
-#     --output_path ./logs/robovqa/pelican_vl
+  echo "========================================"
+  echo "[run_eval] 开始运行: scripts/$f"
+  echo "========================================"
 
-CUDA_VISIBLE_DEVICES=6 python -m embodied_eval \
-    --model qwen2_5_vl \
-    --model_args model_name_or_path=/your/path/to/embodied-eval-main/embodied_eval/data/Qwen3-VL-4B-Instruct,max_num_frames=32,use_flash_attention_2=False \
-    --evaluator eqa \
-    --tasks robovqa \
-    --batch_size 1 \
-    --output_path ./logs/robovqa/cambrain
+  bash "$path"
+  ec=$?
 
+  echo ""
+  if [[ $ec -eq 0 ]]; then
+    echo "[run_eval] 结束运行: scripts/$f — 退出码 0（成功）"
+    ok_list+=("$f")
+  else
+    echo "[run_eval] 结束运行: scripts/$f — 退出码 $ec（失败，继续后续脚本）"
+    fail_list+=("$f ($ec)")
+  fi
+  echo ""
+done
 
+echo "========================================"
+echo "RoboVQA run_eval 汇总"
+echo "========================================"
+echo "成功: ${#ok_list[@]}"
+if [[ ${#ok_list[@]} -gt 0 ]]; then
+  for x in "${ok_list[@]}"; do
+    echo "  - $x"
+  done
+else
+  echo "  （无）"
+fi
+echo ""
+echo "失败或跳过: ${#fail_list[@]}"
+if [[ ${#fail_list[@]} -gt 0 ]]; then
+  for x in "${fail_list[@]}"; do
+    echo "  - $x"
+  done
+else
+  echo "  （无）"
+fi
+echo "========================================"
+echo "[run_eval] 全部任务已结束。"
+echo "========================================"
 
-
-
-
-
-
-
+if [[ ${#fail_list[@]} -gt 0 ]]; then
+  exit 1
+fi
+exit 0

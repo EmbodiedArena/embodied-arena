@@ -1,66 +1,125 @@
-# #!/bin/bash
-# # vsi-bench 评测脚本
+#!/usr/bin/env bash
+# VSI-Bench: 依次运行下方 RUN_SCRIPTS 中列出的 scripts/ 内脚本（仅 basename）。
+# 约定：本文件与 scripts/ 目录始终同级；本脚本不修改当前工作目录。
+# 子脚本的标准输出/错误输出直接打到当前终端。
+# scripts/split.sh 仅用于切分 Hugging Face 数据集，非模型评测，未列入。
 
-# # 切换到项目根目录
-# cd "$(dirname "$0")/../../.." || exit
+set +e
 
-# # API密钥配置（如需要）
-# # export OPENAI_API_KEY='your-api-key'
-# # export OPENAI_API_BASE='your-api-base'  # 可选
+THIS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPTS_DIR="$THIS_DIR/scripts"
 
-# export OPENAI_API_KEY='your-api-key'
-# export OPENAI_API_BASE='https://api.gpt.ge/'  # 可选
-
-# # 获取随机端口
-# PORT=$(python -c "import socket; s=socket.socket(); s.bind(('', 0)); print(s.getsockname()[1]); s.close()")
-
-# export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
-
-# # 运行评测
-# CUDA_VISIBLE_DEVICES=0,7 accelerate launch --num_processes=2 --main_process_port=$PORT -m embodied_eval \
-#     --model mimo_embodied \
-#     --model_args model_name_or_path=/home/tanghyyy/embodied-arena/embodied_eval/model/XiaomiMiMo/MiMo-Embodied-7B/,max_num_frames=16,fps=1,use_flash_attention_2=False \
-#     --evaluator eqa \
-#     --tasks vsibench \
-#     --batch_size 1 \
-#     --output_path ./logs/vsibench/mimo_embodied
-
-# # CUDA_VISIBLE_DEVICES=6,7 accelerate launch --num_processes=1 --main_process_port=$PORT -m embodied_eval \
-# #     --model pelican_vl \
-# #     --model_args model_name_or_path=/your/path/to/embodied-eval-main/embodied_eval/data/pelican-vl,max_num_frames=32,fps=2 \
-# #     --evaluator eqa \
-# #     --tasks vsibench \
-# #     --batch_size 1 \
-# #     --output_path ./logs/vsibench/pelican_vl_7b
-
-#!/bin/bash
-
-cd "$(dirname "$0")/../../.." || exit
-
-# ===== 关键：解决 CUDA 碎片化 =====
-export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
-
-# GPU
-export CUDA_VISIBLE_DEVICES=0,2
-
-PORT=$(python - << 'EOF'
-import socket
-s=socket.socket()
-s.bind(('', 0))
-print(s.getsockname()[1])
-s.close()
-EOF
+# ---------------------------------------------------------------------------
+# 在此数组中填写要运行的脚本文件名（仅 scripts/ 下的文件名）
+# 可按需增删或调整顺序（例如去掉 test_iflybot.sh）
+# ---------------------------------------------------------------------------
+RUN_SCRIPTS=(
+  cambrian_s_7b.sh
+  embodied_brain.sh
+  embodied_vlm.sh
+  gpt5_2.sh
+  gpt5_2_split.sh
+  mimo.sh
+  nuoyin.sh
+  pelican_vl.sh
+  qwen3.sh
+  rynnbrain_8b.sh
+  step3.sh
+  step3_0.sh
+  step3_1.sh
+  step3_2.sh
+  step3_3.sh
+  test_iflybot.sh
+  thinker_vl.sh
+  wall-oss-fast.sh
 )
 
-accelerate launch \
-    --num_processes=1 \
-    --num_machines=1 \
-    --main_process_port=$PORT \
-    --mixed_precision=no \
-    -m embodied_eval \
-    --model mimo_embodied \
-    --model_args model_name_or_path=/home/tanghyyy/embodied-arena/embodied_eval/model/XiaomiMiMo/MiMo-Embodied-7B/,max_num_frames=16,fps=1,dtype=bf16,use_flash_attention_2=False,device_map=auto \
-    --evaluator eqa \
-    --tasks vsibench \
-    --batch_size 1 \
-    --output_path ./logs/vsibench/mimo_embodied
+if [[ ! -d "$SCRIPTS_DIR" ]]; then
+  echo "[run_eval] 错误: 与 run_eval.sh 同级的 scripts 目录不存在: $SCRIPTS_DIR"
+  exit 1
+fi
+
+if [[ ${#RUN_SCRIPTS[@]} -eq 0 ]]; then
+  echo "[run_eval] 错误: RUN_SCRIPTS 数组为空，请在 run_eval.sh 中填写要运行的脚本名"
+  exit 1
+fi
+
+echo "========================================"
+echo "VSI-Bench run_eval"
+echo "========================================"
+echo "run_eval 所在目录: $THIS_DIR"
+echo "scripts 目录:      $SCRIPTS_DIR"
+echo "当前工作目录:      $(pwd)"
+echo ""
+echo "即将依次运行以下脚本（共 ${#RUN_SCRIPTS[@]} 个），输出直接显示在当前终端:"
+echo "----------------------------------------"
+i=1
+for f in "${RUN_SCRIPTS[@]}"; do
+  echo "  [$i] scripts/$f"
+  ((i++)) || true
+done
+echo "----------------------------------------"
+echo ""
+echo "[run_eval] 开始批量执行…"
+echo ""
+
+ok_list=()
+fail_list=()
+
+for f in "${RUN_SCRIPTS[@]}"; do
+  path="$SCRIPTS_DIR/$f"
+  if [[ ! -f "$path" ]]; then
+    echo "========================================"
+    echo "[run_eval] 跳过: scripts/$f（文件不存在）"
+    echo "========================================"
+    fail_list+=("$f (missing)")
+    echo ""
+    continue
+  fi
+
+  echo "========================================"
+  echo "[run_eval] 开始运行: scripts/$f"
+  echo "========================================"
+
+  bash "$path"
+  ec=$?
+
+  echo ""
+  if [[ $ec -eq 0 ]]; then
+    echo "[run_eval] 结束运行: scripts/$f — 退出码 0（成功）"
+    ok_list+=("$f")
+  else
+    echo "[run_eval] 结束运行: scripts/$f — 退出码 $ec（失败，继续后续脚本）"
+    fail_list+=("$f ($ec)")
+  fi
+  echo ""
+done
+
+echo "========================================"
+echo "VSI-Bench run_eval 汇总"
+echo "========================================"
+echo "成功: ${#ok_list[@]}"
+if [[ ${#ok_list[@]} -gt 0 ]]; then
+  for x in "${ok_list[@]}"; do
+    echo "  - $x"
+  done
+else
+  echo "  （无）"
+fi
+echo ""
+echo "失败或跳过: ${#fail_list[@]}"
+if [[ ${#fail_list[@]} -gt 0 ]]; then
+  for x in "${fail_list[@]}"; do
+    echo "  - $x"
+  done
+else
+  echo "  （无）"
+fi
+echo "========================================"
+echo "[run_eval] 全部任务已结束。"
+echo "========================================"
+
+if [[ ${#fail_list[@]} -gt 0 ]]; then
+  exit 1
+fi
+exit 0

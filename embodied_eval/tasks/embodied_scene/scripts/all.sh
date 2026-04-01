@@ -19,7 +19,7 @@ PORT=$(python -c "import socket; s=socket.socket(); s.bind(('', 0)); print(s.get
 
 # CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 accelerate launch --num_processes=8 --main_process_port=$PORT -m embodied_eval \
 #     --model mimo_embodied \
-#     --model_args model_name_or_path=/home/tanghyyy/embodied-arena/embodied_eval/model/XiaomiMiMo/MiMo-Embodied-7B/,max_num_frames=8 \
+#     --model_args model_name_or_path=/your/path/to/embodied-arena/embodied_eval/model/XiaomiMiMo/MiMo-Embodied-7B/,max_num_frames=8 \
 #     --evaluator eqa \
 #     --tasks embodied-scene \
 #     --batch_size 1 \

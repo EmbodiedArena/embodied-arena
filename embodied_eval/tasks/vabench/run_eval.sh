@@ -1,36 +1,124 @@
 #!/usr/bin/env bash
+# VABench-P: 依次运行下方 RUN_SCRIPTS 中列出的 scripts/ 内脚本（仅 basename）。
+# 约定：本文件与 scripts/ 目录始终同级；本脚本不修改当前工作目录。
+# 子脚本的标准输出/错误输出直接打到当前终端。
 
-# VABench-P 通用评测脚本（参考 RoboVQA）
+set +e
 
-# 切换到项目根目录
-cd "$(dirname "$0")/../../.." || exit 1
+THIS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPTS_DIR="$THIS_DIR/scripts"
 
-######################
-# 1. 可选：配置 LLM-as-Judge API（如果评估器需要）
-######################
-export OPENAI_API_KEY='your-api-key'
-export OPENAI_API_BASE='https://api.gpt.ge/v1' 
+# ---------------------------------------------------------------------------
+# 在此数组中填写要运行的脚本文件名（仅 scripts/ 下的文件名）
+# 可按需增删或调整顺序
+# ---------------------------------------------------------------------------
+RUN_SCRIPTS=(
+  cambrian.sh
+  cosmos_reason1_7b.sh
+  embodied_brain.sh
+  embodied_vlm.sh
+  gemini_2_5_pro.sh
+  gpt_5_2.sh
+  internvl3_5_8b.sh
+  mimo_embodied.sh
+  o3.sh
+  pelican_vl.sh
+  qwen2_5_vl.sh
+  qwen3_vl_8b.sh
+  qwen_vl_max.sh
+  robobrain2_7b.sh
+  rynnbrain_8b.sh
+  step3_vl.sh
+  thinker.sh
+  wall_oss.sh
+)
 
-######################
-# 2. 运行评测
-######################
+if [[ ! -d "$SCRIPTS_DIR" ]]; then
+  echo "[run_eval] 错误: 与 run_eval.sh 同级的 scripts 目录不存在: $SCRIPTS_DIR"
+  exit 1
+fi
 
-# 随机找一个空闲端口（如果使用 accelerate，可复用）
-PORT=$(python -c "import socket; s=socket.socket(); s.bind(('', 0)); print(s.getsockname()[1]); s.close()")
+if [[ ${#RUN_SCRIPTS[@]} -eq 0 ]]; then
+  echo "[run_eval] 错误: RUN_SCRIPTS 数组为空，请在 run_eval.sh 中填写要运行的脚本名"
+  exit 1
+fi
 
-# 示例：使用本地/HF 上的多模态模型（请按实际情况修改）
-# 这里示例使用 qwen2_5_vl，你也可以替换为 internvl3_5、mimo_embodied、embodied_brain 等，
-# 只需对应修改 --model 和 --model_args。
+echo "========================================"
+echo "VABench-P run_eval"
+echo "========================================"
+echo "run_eval 所在目录: $THIS_DIR"
+echo "scripts 目录:      $SCRIPTS_DIR"
+echo "当前工作目录:      $(pwd)"
+echo ""
+echo "即将依次运行以下脚本（共 ${#RUN_SCRIPTS[@]} 个），输出直接显示在当前终端:"
+echo "----------------------------------------"
+i=1
+for f in "${RUN_SCRIPTS[@]}"; do
+  echo "  [$i] scripts/$f"
+  ((i++)) || true
+done
+echo "----------------------------------------"
+echo ""
+echo "[run_eval] 开始批量执行…"
+echo ""
 
-CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-0} python -m embodied_eval \
-  --model cambrian \
-  --model_args model_name_or_path=/your/path/to/embodied-eval-main/embodied_eval/data/Cambrian-S-7B,max_num_frames=32,use_flash_attention_2=False \
-  --evaluator eqa \
-  --tasks vabench \
-  --batch_size 1 \
-  --output_path ./logs/vabench/cambrian
+ok_list=()
+fail_list=()
 
-# 如果你想和 RoboVQA 一样，为不同模型建独立脚本：
-#   - 复制本文件为 scripts/cambrian.sh / scripts/embodied_brain.sh 等
-#   - 修改 --model / --model_args / --output_path 即可
+for f in "${RUN_SCRIPTS[@]}"; do
+  path="$SCRIPTS_DIR/$f"
+  if [[ ! -f "$path" ]]; then
+    echo "========================================"
+    echo "[run_eval] 跳过: scripts/$f（文件不存在）"
+    echo "========================================"
+    fail_list+=("$f (missing)")
+    echo ""
+    continue
+  fi
 
+  echo "========================================"
+  echo "[run_eval] 开始运行: scripts/$f"
+  echo "========================================"
+
+  bash "$path"
+  ec=$?
+
+  echo ""
+  if [[ $ec -eq 0 ]]; then
+    echo "[run_eval] 结束运行: scripts/$f — 退出码 0（成功）"
+    ok_list+=("$f")
+  else
+    echo "[run_eval] 结束运行: scripts/$f — 退出码 $ec（失败，继续后续脚本）"
+    fail_list+=("$f ($ec)")
+  fi
+  echo ""
+done
+
+echo "========================================"
+echo "VABench-P run_eval 汇总"
+echo "========================================"
+echo "成功: ${#ok_list[@]}"
+if [[ ${#ok_list[@]} -gt 0 ]]; then
+  for x in "${ok_list[@]}"; do
+    echo "  - $x"
+  done
+else
+  echo "  （无）"
+fi
+echo ""
+echo "失败或跳过: ${#fail_list[@]}"
+if [[ ${#fail_list[@]} -gt 0 ]]; then
+  for x in "${fail_list[@]}"; do
+    echo "  - $x"
+  done
+else
+  echo "  （无）"
+fi
+echo "========================================"
+echo "[run_eval] 全部任务已结束。"
+echo "========================================"
+
+if [[ ${#fail_list[@]} -gt 0 ]]; then
+  exit 1
+fi
+exit 0
