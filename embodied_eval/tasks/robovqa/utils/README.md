@@ -53,7 +53,7 @@ One-off data preprocessing script.
 
 ```bash
 # Run from repo root
-cd /path/to/embodied-eval-main
+cd /path/to/embodied-arena
 python embodied_eval/tasks/robovqa/utils/preprocess.py
 ```
 

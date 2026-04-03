@@ -22,9 +22,9 @@
 
 ```bash
 # Download the dataset
-cd ./embodied-eval-main/embodied_eval/data/open-eqa
+cd ./embodied-arena/embodied_eval/data/open-eqa
 
-huggingface-cli download --repo-type dataset --resume-download ellisbrown/OpenEQA --local-dir ./embodied-eval-main/embodied_eval/data/open-eqa
+huggingface-cli download --repo-type dataset --resume-download ellisbrown/OpenEQA --local-dir ./embodied-arena/embodied_eval/data/open-eqa
 ```
 
 Unpack archives so the layout looks like:
@@ -91,7 +91,7 @@ export OPENAI_API_KEY='your-api-key'
 export OPENAI_API_BASE='https://api.gpt.ge/v1'  # must include /v1 suffix; /v1/ is equivalent
 
 # Log directory to re-score (should contain samples_openeqa-emeqa.json / results_openeqa-emeqa.json)
-BASE_DIR="/your/path/to/embodied-eval-main/logs/openeqa/qwen2_5-vl-7b-instruct/20260125_211253/"
+BASE_DIR="/your/path/to/embodied-arena/logs/openeqa/qwen2_5-vl-7b-instruct/20260125_211253/"
 
 python -m embodied_eval.tasks.openeqa.process \
   --base_dir "${BASE_DIR}" \

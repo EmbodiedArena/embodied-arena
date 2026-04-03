@@ -20,7 +20,7 @@ The framework aligns with the [Embodied Arena](https://www.embodied-arena.com/) 
 ### 2.1 Directory tree
 
 ```
-embodied-eval-main/
+embodied-arena/
 ├── embodied_eval/              # Core evaluation library
 │   ├── models/                 # Model implementations and registry
 │   ├── tasks/                  # Benchmark definitions and data handling
@@ -56,7 +56,7 @@ See [embodied_eval/README.md](embodied_eval/README.md).
 
 ```bash
 # Clone the repo and enter the project root
-cd embodied-eval-main
+cd embodied-arena
 
 # Create and activate a conda environment
 conda create -n embodied-eval python=3.10
@@ -86,7 +86,7 @@ Each benchmark under `embodied_eval/tasks/<benchmark>/` provides a **`run_eval.s
 **If a subscript fails:** Open the corresponding **`embodied_eval/tasks/<benchmark>/scripts/<name>.sh`** and fill in what that template expects—commonly **`OPENAI_API_KEY` / `OPENAI_API_BASE`** (LLM-as-judge or API models), **checkpoint and data paths** (`model_name_or_path`, `--output_path`), **`CUDA_VISIBLE_DEVICES`**, or **conda** `source`/`activate` lines—then re-run.
 
 ```bash
-cd embodied-eval-main
+cd embodied-arena
 bash embodied_eval/tasks/robovqa/run_eval.sh
 ```
 
@@ -103,7 +103,7 @@ To evaluate a new model, add `your_model.sh` under that benchmark’s `scripts/`
 **Option B — Direct CLI**
 
 ```bash
-cd embodied-eval-main
+cd embodied-arena
 
 # Random port to avoid collisions when launching multiple jobs
 PORT=$(python -c "import socket; s=socket.socket(); s.bind(('', 0)); print(s.getsockname()[1]); s.close()")

@@ -25,7 +25,7 @@
 
 ```bash
 # Task directory
-cd ./embodied-eval-main/embodied_eval/tasks/where2place
+cd ./embodied-arena/embodied_eval/tasks/where2place
 
 # Edit the script and set the model path
 nano run_eval.sh
@@ -39,7 +39,7 @@ bash utils/run_eval.sh
 
 ```bash
 # Repo root
-cd embodied-eval-main
+cd embodied-arena
 
 CUDA_VISIBLE_DEVICES=0 accelerate launch \
     --num_processes=1 \
@@ -139,7 +139,7 @@ batch_size=1
 ### Example 1: Basic run
 
 ```bash
-cd embodied-eval-main
+cd embodied-arena
 
 CUDA_VISIBLE_DEVICES=0 accelerate launch \
     --num_processes=1 \
@@ -386,7 +386,7 @@ Run from the **repository root**:
 | `analyze_alternative_strategies.py` | Compare strategies (run `reverse_engineer_scaling.py --all` first) |
 
 ```bash
-cd embodied-eval-main
+cd embodied-arena
 bash embodied_eval/tasks/where2place/utils/quick_test.sh
 python embodied_eval/tasks/where2place/utils/reverse_engineer_scaling.py --all
 ```

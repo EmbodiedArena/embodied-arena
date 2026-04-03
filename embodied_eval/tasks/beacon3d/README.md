@@ -3,7 +3,7 @@
 Full evaluation:
 
 # Environment setup
-cd /home/arena/embodiedeval/embodied-eval-main
+cd /home/arena/embodiedeval/embodied-arena
 conda activate embodied-eval
 export OPENAI_API_KEY=''
 export OPENAI_API_BASE=''

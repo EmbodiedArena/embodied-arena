@@ -43,7 +43,7 @@ Edit `emspatial-bench.yaml`. Two options:
 **Option 1: local dataset on disk** (recommended if already downloaded)
 
 ```yaml
-dataset_path: /your/path/to/embodied-eval-main/embodied_eval/data/embSpatial_Bench
+dataset_path: /your/path/to/embodied-arena/embodied_eval/data/embSpatial_Bench
 load_from_disk: false  # the framework auto-detects and loads
 eval_split: test
 ```

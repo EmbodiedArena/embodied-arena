@@ -95,7 +95,7 @@ After all images are in place, repack into Arrow for faster I/O and multi-image 
 
 ```bash
 # From repo root
-cd /your/path/to/embodied-eval-main
+cd /your/path/to/embodied-arena
 
 # Preprocess (normalize multi-image paths and write Arrow)
 python -m embodied_eval.tasks.unieqa.utils.preprocess \
