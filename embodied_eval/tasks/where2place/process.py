@@ -21,25 +21,16 @@ def where2place_doc_to_visual(doc, dataset_kwargs=None):
 
 def where2place_doc_to_text(doc, dataset_kwargs=None):
     question = doc["question"]
-
-    is_nuoyin = os.getenv("Nuoyin_API_BASE") is not None
-    if is_nuoyin:
-        question = f"{question} Your answer should contain exactly ONE point and is formatted as follows [[x1, y1]]"
-    else:
-        # 添加 pre_prompt（如果存在）
-        if (
-            "pre_prompt" in dataset_kwargs
-            and dataset_kwargs["pre_prompt"] != ""
-        ):
-            question = f"{dataset_kwargs['pre_prompt']} {question}"
-        
-        # 添加 post_prompt（如果存在）
-        if (
-            "post_prompt" in dataset_kwargs
-            and dataset_kwargs["post_prompt"] != ""
-        ):
-            question = f"{question} {dataset_kwargs['post_prompt']}"
-    
+    if (
+        "pre_prompt" in dataset_kwargs
+        and dataset_kwargs["pre_prompt"] != ""
+    ):
+        question = f"{dataset_kwargs['pre_prompt']} {question}"
+    if (
+        "post_prompt" in dataset_kwargs
+        and dataset_kwargs["post_prompt"] != ""
+    ):
+        question = f"{question} {dataset_kwargs['post_prompt']}"
     return question
 
 def where2place_process_results(doc, results, dataset_kwargs=None):
@@ -116,8 +107,6 @@ def text2points(text, width=640, height=480):
     Supports:
     1. JSON-formatted output with "point": [x, y] where x, y ∈ [0, 1]
     2. Tuple-like patterns (x, y) or (x0, y0, x1, y1)
-    3. Nuoyin format: [[x, y]] where x, y may be in [0, 1000] range (will be normalized)
-    4. Pixel coordinates that need normalization (controlled by NORMALIZE_PIXEL_COORDS env var)
 
     Args:
         text (str): Input text potentially containing spatial point descriptions in 
@@ -134,33 +123,7 @@ def text2points(text, width=640, height=480):
         Output:
         array([[320, 240], [160, 360]])
     """
-    points = []
-    
-    is_nuoyin = os.getenv("Nuoyin_API_BASE") is not None
-    # 检测是否需要将整数像素坐标归一化（适配某些输出像素坐标的模型）
-    normalize_pixel_coords = os.getenv("NORMALIZE_PIXEL_COORDS", "false").lower() == "true"
-    
-    if is_nuoyin:
-        # Handle Nuoyin format: [[x, y]] where x, y may be in [0, 1000] range
-        nuoyin_pattern = r"\[\[(\d+\.?\d*)\s*,\s*(\d+\.?\d*)\]\]"
-        nuoyin_matches = re.findall(nuoyin_pattern, text)
-        for match in nuoyin_matches:
-            x_str, y_str = match
-            x = float(x_str) if '.' in x_str else int(x_str)
-            y = float(y_str) if '.' in y_str else int(y_str)
-            
-            # If integer coordinates in 0-1000 range, normalize to 0-1
-            if isinstance(x, int) and 0 <= x <= 1000:
-                x = x / 1000.0
-            if isinstance(y, int) and 0 <= y <= 1000:
-                y = y / 1000.0
-            
-            # Convert normalized coordinates (0-1) to pixel coordinates
-            x_pixel = int(x * width)
-            y_pixel = int(y * height)
-            points.append((x_pixel, y_pixel))
-    else:
-        json_match = re.search(r"\[\s*\{[\s\S]*?\}\s*\]", text)
+    json_match = re.search(r"\[\s*\{[\s\S]*?\}\s*\]", text)
     if json_match:
         try:
             data = json.loads(json_match.group())
