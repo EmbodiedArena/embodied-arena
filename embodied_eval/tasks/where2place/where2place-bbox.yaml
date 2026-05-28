@@ -1,6 +1,9 @@
 task: where2place-bbox
-dataset_path: /data/klx/hf_dataset/where2place/
+dataset_path: /your/path/to/embodied-eval-main/embodied_eval/data/where2place/
 dataset_kwargs:
+  backbone: gpt
+  use_kit_prompt: false
+  bbox_order: min_x_max_x_min_y_max_y
   pre_prompt: You are an agent who reasons about free space and spatial relations.
   post_prompt: Your answer should be a tuple (min_x, max_x, min_y, max_y) indicating the bounding box of the target region. min_x, max_x, min_y, max_y are normalized image coordinates between 0 and 1.
 load_from_disk: true
@@ -10,7 +13,7 @@ doc_to_text: !function process.where2place_doc_to_text
 doc_to_target: "id"
 output_type: generate_until
 generation_kwargs:
-  max_new_tokens: 1024
+  max_new_tokens: 20480
   temperature: 0
   do_sample: false
   top_p: 1.0
