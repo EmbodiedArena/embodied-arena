@@ -19,7 +19,6 @@
 
 - **Source:** Hugging Face `FlagEval/Where2Place`
 - **Task:** 100 real-world images for free-space referral via spatial relations, collected from cluttered scenes. Each image has a sentence describing usable space and a mask for the target region.
-- **Output format:** Different models use different point/bbox conventions; adjust the expected output format in the task configuration so parsing matches your model.
 
 ### 1. Shell script (recommended)
 
@@ -32,7 +31,7 @@ nano run_eval.sh
 # Set MODEL_PATH to your checkpoint
 
 # Run
-bash utils/run_eval.sh
+bash run_eval.sh
 ```
 
 ### 2. Manual CLI
