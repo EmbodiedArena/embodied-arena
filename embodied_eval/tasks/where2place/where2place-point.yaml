@@ -1,10 +1,8 @@
 task: where2place-point
 dataset_path: /your/path/to/embodied-eval-main/embodied_eval/data/where2place/
 dataset_kwargs:
-  backbone: gpt
-  use_kit_prompt: false
-  pre_prompt: You are an agent who reasons about free space and spatial relations.
-  post_prompt: Your answer should be formatted as a list of tuples, i.e. [(x1, y1), (x2, y2), ...], where each tuple contains the x and y coordinates of a point satisfying the conditions above. The coordinates should be between 0 and 1, indicating the normalized pixel locations of the points.
+  backbone: qwen3
+  use_kit_prompt: true
 load_from_disk: true
 eval_split: test
 doc_to_visual: !function process.where2place_doc_to_visual

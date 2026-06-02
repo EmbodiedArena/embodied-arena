@@ -18,6 +18,7 @@ AVAILABLE_MODELS = {
     "qwen2_vl": "Qwen2_VL",
     "qwen2_5_vl": "Qwen2_5_VL",
     "qwen3_vl": "Qwen3_VL",
+    "qwen3_5": "Qwen3_5",
     "vila": "VILA",
     "openai_compatible": "OpenAICompatible",
     "openai_async_compatible": "OpenAIAsyncCompatible",
