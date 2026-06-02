@@ -1,246 +1,182 @@
 '''
-Where2Place task metrics — pointing parse/coords in embodied_eval.pointing.
+VABench-P point-selection evaluation process functions.
 
-Fixes applied vs the original utils/process_back.py:
-  Bug1/2/3 JSON format: handle both "point" and "point_2d" keys (Qwen3-VL / R1.5 native)
-           removed the erroneous `points = []` that wiped parsed results
-           if json_match: block now lives inside the else branch (indentation fix)
-  Bug4     pixel coords: backbone-aware scaling via decode_points_to_absolute (0-1000 -> px)
-  Bug5     bbox_order: where2place-bbox.yaml declares bbox_order=min_x_max_x_min_y_max_y
+Dataset: IffYuan/VABench-P (300 samples, test split)
+  Fields: id (str), problem (str), image (PIL.Image), mask (PIL.Image)
+
+Task: model outputs 8 normalized points (0-1000) or absolute pixel coords
+  wrapped in <Answer><point>[[x1,y1],...,[x8,y8]]</point></Answer>.
+  Accuracy = fraction of points that land inside the ground-truth mask.
 '''
 
-import os
+import ast
 import re
-from collections import defaultdict
 
-import numpy as np
 import pandas as pd
 from loguru import logger as eval_logger
 from PIL import Image
 
 from embodied_eval.pointing.coords import (
-    decode_points_to_absolute,
     ensure_pil_mask,
     mask_accuracy_from_points,
 )
-
-METRICS_FOR_WHERE2PLACE = {"accuracy": "spatial_reference"}
-
-_KIT_POST_PROMPTS = {
-    "qwen3": 'The answer should be presented in JSON format as follows: [{"point_2d": [x, y]}].',
-    "gemini-2.5": 'The answer should be presented in JSON format as follows: [{"point_2d": [x, y]}].',
-    "qwen2_5": 'The answer should be presented in JSON format as follows: [{"point_2d": [x, y]}].',
-    "qwen2.5": 'The answer should be presented in JSON format as follows: [{"point_2d": [x, y]}].',
-    "mimo": 'The answer should be presented in JSON format as follows: [{"point_2d": [x, y]}].',
-    "gpt": (
-        "Your answer should be formatted as a list of tuples, i.e. [(x1, y1), ...], "
-        "where each tuple contains the x and y coordinates of a point satisfying the conditions above. "
-        "The coordinates should be between 0 and 1, indicating the normalized pixel locations of the points."
-    ),
-    "pelican": (
-        "Your answer should be formatted as a list of tuples, i.e. [(x1, y1), ...], "
-        "where each tuple contains the x and y coordinates of a point satisfying the conditions above. "
-        "The coordinates should be between 0 and 1, indicating the normalized pixel locations of the points."
-    ),
-    "internvl": (
-        "Your answer should be formatted as a list of tuples, i.e. [(x1, y1), ...], "
-        "where each tuple contains the x and y coordinates of a point satisfying the conditions above. "
-        "The coordinates should be between 0 and 1, indicating the normalized pixel locations of the points."
-    ),
-    "magma": (
-        "Your answer should be formatted as a list of tuples, i.e. [(x1, y1), ...], "
-        "where each tuple contains the x and y coordinates of a point satisfying the conditions above. "
-        "The coordinates should be between 0 and 1, indicating the normalized pixel locations of the points."
-    ),
-}
+from embodied_eval.pointing.point_utils import omni_decode_points
 
 
-def _resolve_backbone(dataset_kwargs=None) -> str:
-    if dataset_kwargs and dataset_kwargs.get("backbone"):
-        return str(dataset_kwargs["backbone"]).lower().replace("qwen2.5", "qwen2_5")
-    env = os.environ.get("WHERE2PLACE_BACKBONE") or os.environ.get("EMBODIED_EVAL_BACKBONE")
-    if env:
-        return env.lower().replace("qwen2.5", "qwen2_5")
-    return "gpt"
+def vabench_doc_to_visual(doc, dataset_kwargs=None):
+    image = doc.get("image")
+    if image is None:
+        return []
+    if not isinstance(image, Image.Image):
+        return []
+    if image.mode != "RGB":
+        image = image.convert("RGB")
+    return [image]
 
 
-def _resolve_post_prompt(dataset_kwargs=None) -> str:
-    backbone = _resolve_backbone(dataset_kwargs)
-    if dataset_kwargs:
-        if dataset_kwargs.get("post_prompt"):
-            return dataset_kwargs["post_prompt"]
-        if dataset_kwargs.get("use_kit_prompt", True) and backbone in _KIT_POST_PROMPTS:
-            return _KIT_POST_PROMPTS[backbone]
-    return _KIT_POST_PROMPTS.get("gpt", "")
-
-
-def where2place_doc_to_visual(doc, dataset_kwargs=None):
-    return [doc["image"].convert("RGB")]
-
-
-def where2place_doc_to_text(doc, dataset_kwargs=None):
+def vabench_doc_to_text(doc, dataset_kwargs=None):
     dataset_kwargs = dataset_kwargs or {}
-    question = doc["question"]
+    instruction = doc.get("problem", doc.get("question", ""))
     pre = dataset_kwargs.get("pre_prompt", "")
     if pre:
-        question = f"{pre} {question}"
-    post = _resolve_post_prompt(dataset_kwargs)
+        instruction = f"{pre} {instruction}"
+    post = dataset_kwargs.get("post_prompt", "")
     if post:
-        question = f"{question} {post}"
-    return question
+        instruction = f"{instruction} {post}"
+    return instruction
 
 
-def where2place_process_results(doc, results, dataset_kwargs=None):
+def vabench_process_results(doc, results, dataset_kwargs=None):
     dataset_kwargs = dataset_kwargs or {}
-    doc["prediction"] = results[0]
+    raw_prediction = results[0] if results else ""
+    doc["prediction"] = raw_prediction
 
-    target = np.array(doc["mask"]) / 255.0
-    result_dict = {"target": mask_to_bbox(target)}
-    result_dict["question_type"] = doc.get("question_type", "where2place")
+    points = _extract_vabench_points(raw_prediction)
 
-    image = doc["image"].convert("RGB") if doc.get("image") else None
-    width, height = image.size if image else (640, 480)
-    backbone = _resolve_backbone(dataset_kwargs)
+    image = doc.get("image")
+    if isinstance(image, Image.Image):
+        width, height = image.size
+    else:
+        width, height = 640, 480
 
-    acc, points_in_mask, total_points = spatial_reference(
-        doc["prediction"],
-        doc["mask"],
-        width=width,
-        height=height,
-        backbone=backbone,
-        bbox_order=dataset_kwargs.get("bbox_order"),
-    )
+    coord_mode = dataset_kwargs.get("coord_mode", "normalized")
+    if coord_mode == "pixel":
+        abs_points = [[int(round(p[0])), int(round(p[1]))] for p in points]
+    else:
+        abs_points = [[int(round(p[0] / 1000.0 * width)), int(round(p[1] / 1000.0 * height))] for p in points]
+
+    expected_points = int(dataset_kwargs.get("expected_points", 8))
+    scored_points = abs_points[:expected_points]
+
+    mask = doc.get("mask")
+    if mask is not None and len(scored_points) > 0:
+        pil_mask = ensure_pil_mask(mask, width, height)
+        _, points_in_mask, parsed_total = mask_accuracy_from_points(scored_points, pil_mask)
+        total_points = expected_points
+        acc = points_in_mask / total_points
+    else:
+        acc = 0.0
+        points_in_mask = 0
+        parsed_total = len(scored_points)
+        total_points = expected_points
+
+    result_dict = {
+        "target": doc.get("id", ""),
+        "question_type": doc.get("question_type", "vabench"),
+        "accuracy": acc,
+        "processed_points": scored_points,
+        "parsed_points": len(abs_points),
+        "points_in_mask": points_in_mask,
+        "total_points": total_points,
+        "scored_points": parsed_total,
+    }
+
     doc["accuracy"] = acc
-    result_dict["accuracy"] = acc
-    result_dict["processed_points"] = getattr(spatial_reference, "_last_abs_points", [])
-    result_dict["points_in_mask"] = points_in_mask
-    result_dict["total_points"] = total_points
-    result_dict["backbone"] = backbone
-
     return result_dict
 
 
-def where2place_aggregate_results(results):
-    for r in results:
-        assert "question_type" in r, r
-    results = pd.DataFrame(results)
+def vabench_aggregate_results(results):
+    if not results:
+        return {}
 
+    results_df = pd.DataFrame(results)
     output = {}
 
-    for question_type, question_type_indexes in results.groupby("question_type").groups.items():
-        per_question_type = results.iloc[question_type_indexes]
-        for metric in METRICS_FOR_WHERE2PLACE.keys():
-            output[f"{question_type}_{metric}"] = per_question_type[metric].mean()
+    if "question_type" in results_df.columns:
+        for qtype, indices in results_df.groupby("question_type").groups.items():
+            per_type = results_df.iloc[indices]
+            if "accuracy" in per_type.columns:
+                output[f"{qtype}_accuracy"] = per_type["accuracy"].mean()
 
-    metric_to_values = defaultdict(list)
-    for key, val in output.items():
-        if "_" in key:
-            _qtype, metric_name = key.rsplit("_", 1)
-            if metric_name in METRICS_FOR_WHERE2PLACE and isinstance(val, (float, int)):
-                metric_to_values[metric_name].append(val)
-    for metric_name, vals in metric_to_values.items():
-        if vals:
-            output[f"{metric_name}_average"] = sum(vals) / len(vals)
+    if "accuracy" in results_df.columns:
+        overall = results_df["accuracy"].mean()
+        output["accuracy_average"] = overall
+        output["overall"] = overall
 
-    acc_vals = [v for k, v in output.items() if k.endswith("_accuracy") and isinstance(v, (float, int))]
-    if acc_vals:
-        output["overall"] = sum(acc_vals) / len(acc_vals)
-    eval_logger.info(f"Evaluation results: {output}")
+    eval_logger.info(f"VABench-P evaluation results: {output}")
     return output
 
 
-def spatial_reference(
-    pred,
-    mask,
-    width=640,
-    height=480,
-    threshold=0.5,
-    backbone=None,
-    bbox_order=None,
-):
-    """Kit-style spatial reference: omni_decode_points + backbone scaling + mask hit rate."""
-    spatial_reference._last_abs_points = []
+def _extract_vabench_points(text):
+    if not text or not str(text).strip():
+        return []
 
-    if not pred or not str(pred).strip():
-        return 0.0, 0, 0
+    text = str(text).strip()
 
-    backbone = (backbone or "gpt").lower().replace("qwen2.5", "qwen2_5")
-
-    text = str(pred).strip()
     text = re.sub(
         r"^(.*?</think>|<think>.*?</think>)",
         "",
         text,
         flags=re.DOTALL | re.IGNORECASE,
     ).strip()
-    answer_match = re.search(r"<answer>(.*?)</answer>", text, re.DOTALL | re.IGNORECASE)
+
+    answer_match = re.search(
+        r"<answer>(.*?)</answer>",
+        text,
+        re.DOTALL | re.IGNORECASE,
+    )
     if answer_match:
-        text = answer_match.group(1).strip()
+        inner = answer_match.group(1).strip()
+    else:
+        inner = text
 
-    try:
-        abs_points = decode_points_to_absolute(text, width, height, backbone=backbone)
-    except ValueError:
-        eval_logger.warning(
-            f"where2place: unsupported backbone '{backbone}', falling back to 'gpt'"
-        )
-        abs_points = decode_points_to_absolute(text, width, height, backbone="gpt")
-    spatial_reference._last_abs_points = abs_points
+    point_match = re.search(
+        r"<point>(.*?)</point>",
+        inner,
+        re.DOTALL | re.IGNORECASE,
+    )
+    if point_match:
+        inner = point_match.group(1).strip()
 
-    if not abs_points:
-        eval_logger.debug("where2place: no points parsed from prediction")
-        return 0.0, 0, 0
-
-    pil_mask = ensure_pil_mask(mask, width, height)
-
-    if len(abs_points) >= 1 and bbox_order:
-        abs_points = _expand_bbox_points(abs_points, width, height, bbox_order, text, backbone)
-
-    acc, points_in_mask, total_points = mask_accuracy_from_points(abs_points, pil_mask)
-    return acc, points_in_mask, total_points
-
-
-def _expand_bbox_points(abs_points, width, height, bbox_order, text, backbone):
-    """If model returned a single 4-vector bbox, sample points inside the box."""
-    pattern = r"\(([-+]?\d+\.?\d*(?:,\s*[-+]?\d+\.?\d*)*?)\)"
-    for match in re.findall(pattern, text):
-        vector = [float(n) if "." in n else int(n) for n in match.split(",")]
-        if len(vector) != 4:
-            continue
-        if bbox_order == "min_x_max_x_min_y_max_y":
-            min_x, max_x, min_y, max_y = vector
-            x0, x1 = min_x, max_x
-            y0, y1 = min_y, max_y
+    bracket_match = re.search(r"\[\[.*\]\]", inner, re.DOTALL)
+    if bracket_match:
+        raw_points = bracket_match.group(0)
+    else:
+        raw_match = re.search(r"\[\[.*\]\]", text, re.DOTALL)
+        if raw_match:
+            raw_points = raw_match.group(0)
         else:
-            x0, y0, x1, y1 = vector
+            return omni_decode_points(text)
 
-        # Scale if floats (normalized) OR if integers that exceed image bounds (0-1000 style)
-        needs_scale = all(isinstance(v, float) for v in (x0, y0, x1, y1)) or any(
-            v > max(width, height) for v in (x0, x1, y0, y1)
-        )
-        if needs_scale:
-            if backbone in ("qwen3", "gemini-2.5", "gemini_robotics"):
-                x0, x1 = x0 / 1000.0 * width, x1 / 1000.0 * width
-                y0, y1 = y0 / 1000.0 * height, y1 / 1000.0 * height
-            elif backbone in ("gpt", "pelican", "internvl", "magma"):
-                x0, x1 = x0 * width, x1 * width
-                y0, y1 = y0 * height, y1 * height
-        x0, y0, x1, y1 = int(x0), int(y0), int(x1), int(y1)
-        binary = np.zeros((height, width), dtype=bool)
-        binary[y0:y1, x0:x1] = True
-        ys, xs = np.where(binary)
-        if len(xs):
-            return np.stack([xs, ys], axis=1).tolist()
-    return abs_points
+    points = _try_parse_points_array(raw_points)
+    if points is not None:
+        return points
+
+    return omni_decode_points(text)
 
 
-def mask_to_bbox(mask, threshold=0.5):
-    binary_mask = mask > threshold
-    ys, xs = np.where(binary_mask)
+def _try_parse_points_array(raw):
+    try:
+        points_list = ast.literal_eval(raw)
+        if isinstance(points_list, list) and all(
+            isinstance(p, (list, tuple)) and len(p) == 2 for p in points_list
+        ):
+            return [[float(p[0]), float(p[1])] for p in points_list]
+    except (ValueError, SyntaxError):
+        pass
 
-    if len(xs) == 0 or len(ys) == 0:
-        return None
+    point_pairs = re.findall(r"\[(\d+\.?\d*)\s*,\s*(\d+\.?\d*)\]", raw)
+    if point_pairs:
+        return [[float(x), float(y)] for x, y in point_pairs]
 
-    x0, x1 = xs.min(), xs.max()
-    y0, y1 = ys.min(), ys.max()
-
-    return (x0, y0, x1, y1)
+    return None
