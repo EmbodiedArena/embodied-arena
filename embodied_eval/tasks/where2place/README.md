@@ -133,6 +133,35 @@ batch_size=1
 
 ---
 
+## Backbone and coordinate modes
+
+`where2place-point.yaml` uses `dataset_kwargs.backbone` to keep the prompt
+format and coordinate scaling consistent with the model family. This matters
+because the evaluator converts parsed points into absolute pixels before
+checking them against the reference mask.
+
+| `backbone` | Expected output style | Coordinate interpretation |
+|------------|-----------------------|---------------------------|
+| `qwen3` | JSON-like `[{"point_2d": [x, y]}]` | `x,y` are 0-1000 normalized coordinates |
+| `gemini-2.5` | JSON-like `[{"point_2d": [x, y]}]` | `x,y` are 0-1000 normalized coordinates |
+| `gemini_robotics` | JSON-like point output | `x,y` are 0-1000 normalized coordinates, with swapped axis handling in code |
+| `qwen2_5` / `qwen2.5` | JSON-like `[{"point_2d": [x, y]}]` | `x,y` are absolute pixel coordinates |
+| `mimo` | JSON-like `[{"point_2d": [x, y]}]` | `x,y` are absolute pixel coordinates |
+| `gpt` | Tuple list like `[(x1, y1), ...]` | `x,y` are 0-1 normalized coordinates |
+| `pelican` | Tuple list like `[(x1, y1), ...]` | `x,y` are 0-1 normalized coordinates |
+| `internvl` | Tuple list like `[(x1, y1), ...]` | `x,y` are 0-1 normalized coordinates |
+| `magma` | Tuple list like `[(x1, y1), ...]` | `x,y` are 0-1 normalized coordinates |
+| `molmo` | Point list parsed by `omni_decode_points` | `x,y` are 0-100 normalized coordinates |
+
+`use_kit_prompt: true` lets `process.py` choose the built-in post-prompt for
+the selected backbone. If `post_prompt` is explicitly set in the YAML, that
+custom prompt takes precedence. The current `where2place-point.yaml` defaults
+to `backbone: qwen3` and `use_kit_prompt: true`; the previous GPT-style
+configuration is kept as comments in the YAML for models that output 0-1 tuple
+coordinates.
+
+---
+
 ## Examples
 
 ### Example 1: Basic run
