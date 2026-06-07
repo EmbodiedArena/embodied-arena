@@ -20,6 +20,7 @@ This document records installation dependencies, common issues, and recommended 
   - [EmbodiedGPT](#embodiedgpt)
   - [wall_oss](#wall_oss)
   - [mimo_embodied](#mimo_embodied)
+  - [Wall-Brain](#wall-brain)
 
 ---
 
@@ -185,3 +186,18 @@ pip install --no-build-isolation --verbose .
 Download the file `preprocessor_config.json` from https://huggingface.co/Qwen/Qwen2.5-VL-7B-Instruct/tree/main
 Put the file into /path/to/XiaomiMiMo/MiMo-Embodied-7B/
 ```
+
+### Wall-Brain
+
+Wall-Brain is an embodied VLM fine-tuned from Qwen3.5. It reuses the `qwen3_5` model class
+in `embodied_eval/models/qwen3_5.py` for inference — set `--model qwen3_5` when running.
+
+**Key dependencies:**
+
+| Component     | Requirement           |
+|---------------|-----------------------|
+| PyTorch       | > 2.4                 |
+| transformers  | ≥ 5.6.2 (recommended) |
+
+Other dependencies follow the standard Qwen3.5 setup. See `embodied_eval/models/qwen3_5.py`
+for the full list.
