@@ -257,7 +257,7 @@ def compute_accuracy(doc, target, prediction):
     answer_idx = doc.get("answer")
     answer_options = doc.get("answer_options", [])
 
-    eval_logger.info(f"compute_accuracy called for doc_id={doc.get('doc_id')} relation={doc.get('relation')} answer_present={'yes' if answer_idx is not None else 'no'} options_present={len(answer_options)}")
+    eval_logger.info(f"compute_accuracy called for doc_id={doc.get('question_id')} relation={doc.get('relation')} answer_present={'yes' if answer_idx is not None else 'no'} options_present={len(answer_options)}")
 
     # Helper: try to parse options from the raw question text if not provided
     def _parse_options_from_doc_text(doc_text: str) -> List[str]:
@@ -305,23 +305,23 @@ def compute_accuracy(doc, target, prediction):
 
     # If still missing, give up
     if answer_idx is None or not answer_options:
-        eval_logger.warning(f"Unable to determine ground-truth answer for doc_id={doc.get('doc_id')}; answer_idx={answer_idx} answer_options_len={len(answer_options)}")
+        eval_logger.warning(f"Unable to determine ground-truth answer for doc_id={doc.get('question_id')}; answer_idx={answer_idx} answer_options_len={len(answer_options)}")
         return 0.0
 
     # Extract predicted index from text
     eval_logger.info(f"Extracting prediction from text. prediction_preview='{str(prediction)[:200]}'")
     pred_idx = extract_prediction_from_text(prediction, answer_options)
     if pred_idx is None:
-        eval_logger.info(f"Prediction could not be mapped to any option. doc_id={doc.get('doc_id')}")
+        eval_logger.info(f"Prediction could not be mapped to any option. doc_id={doc.get('question_id')}")
         return 0.0
 
     # Log predicted option and comparison
     pred_text = answer_options[pred_idx] if 0 <= pred_idx < len(answer_options) else None
     true_text = answer_options[answer_idx] if 0 <= answer_idx < len(answer_options) else None
-    eval_logger.info(f"doc_id={doc.get('doc_id')} predicted_idx={pred_idx} predicted_text='{pred_text}' answer_idx={answer_idx} answer_text='{true_text}'")
+    eval_logger.info(f"doc_id={doc.get('question_id')} predicted_idx={pred_idx} predicted_text='{pred_text}' answer_idx={answer_idx} answer_text='{true_text}'")
 
     score = 1.0 if pred_idx == answer_idx else 0.0
-    eval_logger.info(f"Result for doc_id={doc.get('doc_id')}: score={score}")
+    eval_logger.info(f"Result for doc_id={doc.get('question_id')}: score={score}")
     return score
 
 
