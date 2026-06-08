@@ -30,6 +30,64 @@ metric_kwargs:
 
 To change prompts or decoding, edit `dataset_kwargs` or `generation_kwargs`.
 
+#### 2.1 `metric_mode`
+
+Controls how predicted points are scored against the ground-truth mask.
+Must be set under `dataset_kwargs` in the YAML; omitting it or using an
+unknown value produces a `ValueError`.  Currently the only supported value
+is `"mask"`.
+
+**`"mask"`** — binary point-in-mask scoring.
+Each predicted point is checked against the reference mask at its pixel
+coordinate.  Points that land on a foreground (non-zero) pixel count as a hit;
+points on background count as a miss.
+
+```yaml
+dataset_kwargs:
+  metric_mode: mask
+```
+
+#### 2.2 `expected_points`
+
+How many points the model is expected to output in its response.  Must be set
+under `dataset_kwargs` in the YAML; omitting it produces a `ValueError`.
+
+The per-sample accuracy is always `hits / expected_points`, where *hits* counts
+how many of the first *N* parsed points fall inside the reference mask.
+
+**For VABench-P, `expected_points` must be `8`.**  The original benchmark
+requires the model to describe a target region with eight uniformly distributed
+points.  Changing this value alters the task semantics and produces scores that
+are not comparable with the published leaderboard.
+
+```yaml
+dataset_kwargs:
+  metric_mode: mask
+  expected_points: 8
+```
+
+#### 2.3 `coord_mode`
+
+Controls how the model's output coordinates are interpreted.  Must be set under
+`dataset_kwargs` in the YAML; omitting it or using an unknown value produces a
+`ValueError`.
+
+| Value | Interpretation | Coordinate conversion |
+|---|---|---|
+| `"normalized"` | Model outputs coordinates in 0–1000 normalized space | `px = round(x/1000 × width)`, `py = round(y/1000 × height)` |
+| `"pixel"` | Model outputs absolute pixel coordinates | `px = round(x)`, `py = round(y)` (no scaling) |
+
+`"normalized"` is the standard choice for most VLMs (Qwen, InternVL, GPT, etc.).
+`"pixel"` is intended for models that natively output absolute pixel positions
+(e.g. RoboBrain2 — see `vabench_robobrain2.yaml`).
+
+```yaml
+dataset_kwargs:
+  metric_mode: mask
+  expected_points: 8
+  coord_mode: normalized
+```
+
 ### 3. Running evaluation
 
 #### 3.1 CLI (from repo root)
@@ -95,6 +153,26 @@ Meaning:
 - `accuracy_average` — mean across types (0–1)
 - `overall` — final aggregate (0–1)
 
-**Scoring:** VABench-P parses the eight normalized points from the model output and computes accuracy against the annotated mask.
+**Scoring logic:**
+
+1. **Parse** — The evaluator extracts numeric coordinates from the model output
+   using `omni_decode_points()`, which handles `[[x1,y1],...]` arrays, JSON
+   `point_2d` structures, and other common formats.
+
+2. **Scale** — Coordinates are assumed to be in 0–1000 normalized space and
+   mapped to absolute pixels: `px = round(x / 1000 * width)`,
+   `py = round(y / 1000 * height)`.
+
+3. **Truncate** — Only the first `expected_points` (= 8) parsed coordinates
+   are kept.  Fewer than 8 points in the output means fewer points are checked
+   against the mask, directly lowering the score.
+
+4. **Check** — Each pixel coordinate is looked up in the ground-truth binary
+   mask.  A pixel with value > 0 counts as a hit; a pixel with value 0 (or
+   out of image bounds) counts as a miss.
+
+5. **Score** — The per-sample accuracy is `hits / expected_points`.  With 8
+   points, possible scores range from 0.0 (all miss) through intermediate
+   steps (0.125, 0.25, …) to 1.0 (all hit).
 
 **Website scale (0–100):** Raw scores are in \[0, 1\]; **website score = raw score × 100**.
