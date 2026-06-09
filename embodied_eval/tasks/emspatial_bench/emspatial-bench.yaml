@@ -1,6 +1,6 @@
 task: emspatial-bench
 # 使用 HuggingFace 数据集路径（框架会自动使用本地缓存如果已下载）
-# dataset_path: Phineas476/EmbSpatial-Bench
+# dataset_path: FlagEval/EmbSpatial-Bench
 # 如果希望强制使用本地路径，取消注释下面这行并注释掉上面的 dataset_path
 dataset_path: /your/path/to/embodied-eval-main/embodied_eval/data/embSpatial_Bench
 dataset_kwargs: {}

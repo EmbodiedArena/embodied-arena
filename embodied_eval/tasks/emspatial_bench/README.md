@@ -14,11 +14,11 @@
 
 The EmbSpatial-Bench dataset can be downloaded from Hugging Face.
 
-EmbSpatial-Bench is not released directly in a ready-to-use form; **Phineas476/EmbSpatial-Bench** is a processed copy that serves as a usable EmbSpatial-Bench dataset source.
+EmbSpatial-Bench is not released directly in a ready-to-use form; **FlagEval/EmbSpatial-Bench** is a processed copy that serves as a usable EmbSpatial-Bench dataset source.
 
 ```bash
 # Option 1: download with the Hugging Face datasets library
-python -c "from datasets import load_dataset; ds = load_dataset('Phineas476/EmbSpatial-Bench'); ds.save_to_disk('/path/to/embSpatial_Bench')"
+python -c "from datasets import load_dataset; ds = load_dataset('FlagEval/EmbSpatial-Bench'); ds.save_to_disk('/path/to/embSpatial_Bench')"
 
 # Option 2: if you already have a local copy (Hugging Face layout)
 # Expected layout:
@@ -51,7 +51,7 @@ eval_split: test
 **Option 2: Hugging Face online load**
 
 ```yaml
-dataset_path: Phineas476/EmbSpatial-Bench
+dataset_path: FlagEval/EmbSpatial-Bench
 load_from_disk: false
 eval_split: test
 ```
@@ -186,6 +186,19 @@ Inspect `samples_emspatial-bench.json` (JSONL) for per-sample details:
 
 - Check `dataset_path` in `emspatial-bench.yaml`
 - Ensure JSON/JSONL layout is valid
+
+**`datasets` version mismatch — `TypeError: must be called with a dataclass type or instance`:**
+
+This error occurs when Arrow files saved by a newer version of `datasets` are
+loaded by an older version (e.g. `datasets==2.16.1`). Upgrade `datasets`:
+
+```bash
+pip install --upgrade "datasets>=2.19.0"
+```
+
+Alternatively, bypass the local disk copy and load directly from Hugging Face by
+setting `load_from_disk: false` with `dataset_path: FlagEval/EmbSpatial-Bench` in
+the YAML.
 
 **Image decode failures:**
 

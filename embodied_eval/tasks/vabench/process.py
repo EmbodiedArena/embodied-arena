@@ -59,36 +59,49 @@ def vabench_process_results(doc, results, dataset_kwargs=None):
     else:
         width, height = 640, 480
 
-    coord_mode = dataset_kwargs.get("coord_mode", "normalized")
+    coord_mode = dataset_kwargs.get("coord_mode")
     if coord_mode == "pixel":
         abs_points = [[int(round(p[0])), int(round(p[1]))] for p in points]
-    else:
+    elif coord_mode == "normalized":
         abs_points = [[int(round(p[0] / 1000.0 * width)), int(round(p[1] / 1000.0 * height))] for p in points]
-
-    expected_points = int(dataset_kwargs.get("expected_points", 8))
-    scored_points = abs_points[:expected_points]
-
-    mask = doc.get("mask")
-    if mask is not None and len(scored_points) > 0:
-        pil_mask = ensure_pil_mask(mask, width, height)
-        _, points_in_mask, parsed_total = mask_accuracy_from_points(scored_points, pil_mask)
-        total_points = expected_points
-        acc = points_in_mask / total_points
     else:
-        acc = 0.0
-        points_in_mask = 0
-        parsed_total = len(scored_points)
-        total_points = expected_points
+        raise ValueError(f"Unknown or missing coord_mode: {coord_mode}")
+
+    expected_points = dataset_kwargs.get("expected_points")
+    if expected_points is None:
+        raise ValueError("expected_points is required in dataset_kwargs")
+    expected_points = int(expected_points)
+    eval_points = abs_points[:expected_points]
+
+    metric_mode = dataset_kwargs.get("metric_mode")
+    if metric_mode is None:
+        raise ValueError("metric_mode is required in dataset_kwargs")
+    mask = doc.get("mask")
+
+    if metric_mode == "mask":
+        if mask is not None and len(eval_points) > 0:
+            pil_mask = ensure_pil_mask(mask, width, height)
+            _, points_in_mask, _ = mask_accuracy_from_points(eval_points, pil_mask)
+            total_points = expected_points
+            acc = points_in_mask / total_points
+            scored_count = points_in_mask
+        else:
+            acc = 0.0
+            points_in_mask = 0
+            total_points = expected_points
+            scored_count = 0
+    else:
+        raise ValueError(f"Unknown metric_mode: {metric_mode}")
 
     result_dict = {
         "target": doc.get("id", ""),
         "question_type": doc.get("question_type", "vabench"),
         "accuracy": acc,
-        "processed_points": scored_points,
+        "processed_points": eval_points,
         "parsed_points": len(abs_points),
         "points_in_mask": points_in_mask,
         "total_points": total_points,
-        "scored_points": parsed_total,
+        "scored_points": scored_count,
     }
 
     doc["accuracy"] = acc
