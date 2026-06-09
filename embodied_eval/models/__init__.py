@@ -42,6 +42,7 @@ AVAILABLE_MODELS = {
     "cambrian": "Cambrian",
     "step3_vl": "Step3_VL",
     "rynnbrain": "RynnBrain",
+    "wall_brain_preview": "WallBrainPreview",
     "thinker_vl": "Thinker_VL",
     "embodied_vlm": "EmbodiedVLM",
     "embodiedvlm": "embodied_eval.models.embodied_vlm.EmbodiedVLM"
