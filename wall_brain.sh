@@ -7,9 +7,8 @@ cd "$(dirname "$0")" || exit
 # 可调参数
 # =============================================================================
 
-MODEL_NAME="qwen3_5"
+MODEL_NAME="wall_brain_preview"
 MODEL_PATH="./path/to/model"
-MODEL_TAG="WALL_BRAIN"
 
 GPUS="0,1,2,3,4,5,6,7"
 NUM_PROCESSES=8
@@ -59,7 +58,7 @@ echo ""
 for TASK in "${TASKS[@]}"; do
     [ -z "$TASK" ] && continue
     TASK_DIR="${TASK%%-*}"
-    OUTPUT_PATH="./logs/${MODEL_TAG}/${TASK_DIR}"
+    OUTPUT_PATH="./logs/${MODEL_NAME}/${TASK_DIR}"
     PORT=$(get_port)
 
     echo "运行任务: ${TASK}"
