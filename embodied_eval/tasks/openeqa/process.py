@@ -105,6 +105,7 @@ def openeqa_emeqa_aggregate_results(results):
             avg_val = sum(vals) / len(vals)
             output[f"{metric_name}_all_samples_average"] = avg_val
     output["overall"] = sum([_ for _ in output.values()]) / len(output)
+    output["100score_overall"] = (output["overall"] - 1) * 25
     eval_logger.info(f"Evaluation results: {output}")
     return output
 

@@ -158,6 +158,17 @@ The first seven entries are scores for different dataset categories. `score_per_
 
 **Website score (0–100 scale)**: raw scores are on 1–5; **website score = (raw − 1) / 4 × 100**
 
+The `results_openeqa-emeqa.json` also includes a convenience field `100score_overall`
+that directly reports the website-scale overall score:
+
+```json
+{
+  "attribute recognition_llm_match_score": 3.99,
+  "overall": 3.37,
+  "100score_overall": 59.3
+}
+```
+
 ---
 
 ## Appendix

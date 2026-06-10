@@ -198,6 +198,7 @@ def msqa_aggregate_results(results):
             output[f"{metric_name}_average"] = avg_val
 
     output["overall"] = sum([_ for _ in output.values()]) / len(output)
+    output["100score_overall"] = (output["overall"] - 1) * 25
     eval_logger.info(f"Evaluation results: {output}")
     return output
 

@@ -148,6 +148,7 @@ def robovqa_aggregate_results(results):
 
     # overall 与 llm_match_score_average 一致，避免重复计入导致语义混淆
     output["overall"] = output.get("llm_match_score_average", sum([v for v in output.values() if isinstance(v, (float, int))]) / max(1, sum(1 for v in output.values() if isinstance(v, (float, int)))))
+    output["100score_overall"] = (output["overall"] - 1) * 25
     eval_logger.info(f"Evaluation results: {output}")
     return output
 

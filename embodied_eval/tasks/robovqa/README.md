@@ -124,6 +124,19 @@ See `results_robovqa.json`:
 
 **Website score (0–100 scale)**: raw scores are on 1–5; **website score = (raw − 1) / 4 × 100**
 
+The `results_robovqa.json` also includes a convenience field `100score_overall`
+that directly reports the website-scale overall score:
+
+```json
+{
+  "past_description:freeform_llm_match_score": 4.2,
+  "planning:freeform_llm_match_score": 3.8,
+  "llm_match_score_average": 4.0,
+  "overall": 4.0,
+  "100score_overall": 75.0
+}
+```
+
 **Key fields:**
 
 - `llm_match_score_average`: overall mean (aligned with official RoboVQA)
