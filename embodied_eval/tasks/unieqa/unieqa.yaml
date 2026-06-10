@@ -1,6 +1,7 @@
 task: unieqa
 dataset_path: /your/path/to/embodied-eval-main/embodied_eval/data/unieqa/unieqa_full_multi_v3
-dataset_kwargs: {}
+dataset_kwargs:
+  image_root: /your/path/to/embodied-eval-main/embodied_eval/data/unieqa/111/UniEQA/data
 load_from_disk: true
 eval_split: train
 doc_to_visual: !function process.unieqa_doc_to_visual

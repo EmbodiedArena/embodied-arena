@@ -196,5 +196,110 @@ export OPENAI_API_BASE='https://api.gpt.ge/v1'  # Must end with /v1
 **Only one sample loads:** Often Hugging Face dataset cache.
 
 ```bash
-rm -rf ~/.cache/huggingface/datasets/imagefolder
+## 9. Path configuration
+
+### 9.0 Dataset directory layout
+
+The pre-built dataset (`EmbodiedArena/unieqa`) contains both the raw images and
+the Arrow-repacked data in one tree.  The `unieqa_full_multi_v3/` directory is
+the compiled Arrow dataset that `dataset_path` should point to; the `111/UniEQA/`
+tree holds the raw JSON task definitions and image files referenced at runtime.
+
+```text
+{unieqa_root}/
+├── 111/
+│   └── UniEQA/
+│       ├── data/
+│       │   ├── Part1/
+│       │   │   ├── images/
+│       │   │   │   ├── hm3d-v0/
+│       │   │   │   │   ├── 000-hm3d-BFRyYbPCCPE/  (~100–600 PNG frames)
+│       │   │   │   │   ├── 001-hm3d-TPhiubUHKcP/
+│       │   │   │   │   └── ...
+│       │   │   │   └── scannet-v0/
+│       │   │   │       ├── scene0709_00/           (~100–600 JPG frames)
+│       │   │   │       ├── scene0785_00/
+│       │   │   │       └── ...
+│       │   │   └── ...
+│       │   ├── Part2/
+│       │   ├── Part3/
+│       │   ├── Part4/
+│       │   ├── Part5/
+│       │   └── Part6/
+│       │       └── images/...
+│       ├── affordance/core/data.json
+│       ├── spatial_perception/core/data.json
+│       ├── object_type/core/data.json
+│       └── ... (12 skill dimensions, each with core/data.json)
+│       └── README.md
+├── unieqa_full_multi_v3/          ← set dataset_path to this directory
+│   ├── dataset_dict.json
+│   └── train/
+│       ├── data-00000-of-00001.arrow   (2 242 samples)
+│       ├── dataset_info.json
+│       └── state.json
+├── download_unieqa_core_json.sh
+├── scannet-v0.tar.gz
+└── scannet_needed_scenes.txt
+```
+
+- The `images` column of every Arrow sample stores absolute paths into the
+  `111/UniEQA/data/Part{N}/images/...` tree (as described in 9.1).
+- `Part1/images/` holds HM3D and ScanNet video frames (~63 000 PNG/JPG files).
+- `Part2` through `Part6` hold additional task images (small RGB snapshots).
+
+### 9.1 Why paths break after moving the dataset
+
+When the dataset is built locally via `preprocess.py`, image paths are resolved to
+**absolute paths** on the builder's machine at line 118 of `utils/preprocess.py`:
+
+```python
+processed_sample['images'].extend([str(f) for f in img_files])
+```
+
+These absolute paths are stored in the `images` column of the Arrow dataset
+(`unieqa_full_multi_v3/train/data-*.arrow`).  When the dataset directory is
+copied to another machine, those stored paths point to locations that do not
+exist, and `Image.open()` fails with a `FileNotFoundError`.
+
+**The Hugging Face pre-built dataset (`EmbodiedArena/unieqa`) is affected by the
+same issue.**  It was built on a specific machine and contains that machine's
+absolute paths.  You must configure `image_root` (see 9.2) to use it on any
+other system.
+
+The only scenario that does **not** require `image_root` is building the
+dataset from scratch on the same machine where it will be evaluated, in which
+case the `--data_root` path passed to `preprocess.py` matches the runtime path
+exactly.
+
+### 9.2 Runtime path override
+
+You can redirect image paths at runtime without rebuilding the dataset.  In
+`unieqa.yaml`, set two entries under `dataset_kwargs`:
+
+| Key | Meaning | Example |
+|-----|---------|---------|
+| `dataset_path` | Path to the Arrow dataset directory (`unieqa_full_multi_v3`) | `/home/arena/.../unieqa_full_multi_v3` |
+| `image_root` | Parent directory that contains `Part1/`, `Part2/`, … — i.e. the `{data_root}` used when running `preprocess.py` | `/home/arena/.../data/unieqa` |
+
+**How it works:** When the framework tries to load an image and finds that the
+stored path does not exist on disk, it looks for the first `Part{N}/` anchor in
+the path, discards everything before it, and prepends `image_root`.  For example:
+
+```
+Stored:    /home/tanghyyy/.../data/unieqa/Part1/images/hm3d-v0/004-hm3d/00099-rgb.png
+Anchored:  Part1/images/hm3d-v0/004-hm3d/00099-rgb.png
+Resolved:  {image_root}/Part1/images/hm3d-v0/004-hm3d/00099-rgb.png
+```
+
+If `image_root` is not set, the original stored path is used unchanged.
+
+```yaml
+# Example unieqa.yaml excerpt
+dataset_path: /home/arena/embodiedeval/.../embodied_eval/data/unieqa/unieqa_full_multi_v3
+dataset_kwargs:
+  image_root: /home/arena/embodiedeval/.../embodied_eval/data/unieqa
+load_from_disk: true
+eval_split: train
+```
 ```

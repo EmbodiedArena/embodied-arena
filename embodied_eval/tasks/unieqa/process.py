@@ -303,7 +303,9 @@ Your Turn:"""
 
 def unieqa_doc_to_visual(doc, dataset_kwargs=None):
     from PIL import Image
+    import os as _os
     visuals = []
+    image_root = (dataset_kwargs or {}).get('image_root', '')
     if 'images' in doc and isinstance(doc['images'], list):
         img_paths = doc['images']
         
@@ -318,15 +320,36 @@ def unieqa_doc_to_visual(doc, dataset_kwargs=None):
             
         for img_path in img_paths:
             try:
-                if hasattr(img_path, 'convert'): visuals.append(img_path.convert('RGB'))
-                else: visuals.append(Image.open(img_path).convert('RGB'))
+                if hasattr(img_path, 'convert'):
+                    visuals.append(img_path.convert('RGB'))
+                else:
+                    resolved = img_path
+                    if image_root and not _os.path.exists(img_path):
+                        norm = img_path.replace('\\', '/')
+                        for pn in ['Part1', 'Part2', 'Part3', 'Part4', 'Part5', 'Part6']:
+                            anchor = '/' + pn + '/'
+                            if anchor in norm:
+                                idx = norm.index(anchor)
+                                resolved = _os.path.join(image_root, norm[idx+1:])
+                                break
+                    visuals.append(Image.open(resolved).convert('RGB'))
             except Exception as e: eval_logger.warning(f"Failed to load image {img_path}: {e}")
         return visuals
     if 'image' in doc:
         img = doc['image']
         if hasattr(img, 'convert'): return [img.convert('RGB')]
         elif isinstance(img, str):
-            try: return [Image.open(img).convert('RGB')]
+            try:
+                resolved = img
+                if image_root and not _os.path.exists(img):
+                    norm = img.replace('\\', '/')
+                    for pn in ['Part1', 'Part2', 'Part3', 'Part4', 'Part5', 'Part6']:
+                        anchor = '/' + pn + '/'
+                        if anchor in norm:
+                            idx = norm.index(anchor)
+                            resolved = _os.path.join(image_root, norm[idx+1:])
+                            break
+                return [Image.open(resolved).convert('RGB')]
             except: pass
     return []
 
