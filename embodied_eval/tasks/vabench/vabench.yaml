@@ -3,7 +3,6 @@ dataset_path: IffYuan/VABench-P
 dataset_kwargs:
   pre_prompt: ""
   post_prompt: "Output the point coordinates in JSON format.\nFor example: \n[\n{\"point_2d\": [x, y], \"label\": \"point_1\"}\n]"
-  expected_points: 1
   metric_mode: mask
   expected_points: 8
   coord_mode: normalized

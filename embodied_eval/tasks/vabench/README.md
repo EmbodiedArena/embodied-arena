@@ -212,7 +212,6 @@ meaning is the same in both `"fixed"` and `"adaptive"` modes unless noted.
 | `total_points` | Denominator used in accuracy | `expected_points` (e.g. 8) | Equal to `parsed_points` |
 | `points_in_mask` | Points that fell inside the mask | Same | Same |
 | `scored_points` | Points that scored (same as `points_in_mask`) | Same | Same |
-| `checked_points` | Points actually checked against the mask | `min(parsed_points, expected_points)` | Equal to `parsed_points` |
 | `processed_points` | The raw coordinate list submitted for scoring | Truncated to `expected_points` | All parsed points |
 
 **Website scale (0–100):** Raw scores are in \[0, 1\]; **website score = raw score × 100**.
