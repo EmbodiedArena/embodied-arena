@@ -6,6 +6,7 @@ dataset_kwargs:
   pre_prompt: ""
   post_prompt: "Your answer should be wrapped in <Answer><point>[[x1,y1],[x2,y2],[x3,y3],[x4,y4],[x5,y5],[x6,y6],[x7,y7],[x8,y8]]</point></Answer>, where each coordinate is in absolute pixel coordinates (x in [0,width), y in [0,height))."
   coord_mode: pixel  # RoboBrain2 outputs pixel coords; do not scale
+  points_mode: fixed
   metric_mode: mask
   expected_points: 8
 load_from_disk: true

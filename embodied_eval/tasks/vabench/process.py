@@ -67,11 +67,24 @@ def vabench_process_results(doc, results, dataset_kwargs=None):
     else:
         raise ValueError(f"Unknown or missing coord_mode: {coord_mode}")
 
-    expected_points = dataset_kwargs.get("expected_points")
-    if expected_points is None:
-        raise ValueError("expected_points is required in dataset_kwargs")
-    expected_points = int(expected_points)
-    eval_points = abs_points[:expected_points]
+    points_mode = dataset_kwargs.get("points_mode", "adaptive")
+
+    if points_mode == "fixed":
+        expected_points = dataset_kwargs.get("expected_points")
+        if expected_points is None:
+            raise ValueError("expected_points is required when points_mode is 'fixed'")
+        expected_points = int(expected_points)
+    elif points_mode == "adaptive":
+        if "expected_points" in dataset_kwargs:
+            raise ValueError("expected_points must NOT be set when points_mode is 'adaptive'")
+    else:
+        raise ValueError(f"Unknown points_mode: {points_mode}")
+
+    if points_mode == "fixed":
+        eval_points = abs_points[:expected_points]
+    else:
+        eval_points = abs_points
+        expected_points = len(abs_points) if len(abs_points) > 0 else 1
 
     metric_mode = dataset_kwargs.get("metric_mode")
     if metric_mode is None:

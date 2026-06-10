@@ -7,6 +7,7 @@ dataset_kwargs:
   metric_mode: mask
   expected_points: 8
   coord_mode: normalized
+  points_mode: fixed
 load_from_disk: true
 eval_split: test
 doc_to_visual: !function process.vabench_doc_to_visual

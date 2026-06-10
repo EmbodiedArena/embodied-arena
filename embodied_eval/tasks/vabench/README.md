@@ -49,21 +49,18 @@ dataset_kwargs:
 
 #### 2.2 `expected_points`
 
-How many points the model is expected to output in its response.  Must be set
-under `dataset_kwargs` in the YAML; omitting it produces a `ValueError`.
+How many points the model is expected to output in its response.  Used only when
+`points_mode` is `"fixed"` (see 2.4); must be set under `dataset_kwargs` in that
+case, omitting it produces a `ValueError`.
 
-The per-sample accuracy is always `hits / expected_points`, where *hits* counts
-how many of the first *N* parsed points fall inside the reference mask.
-
-**For VABench-P, `expected_points` must be `8`.**  The original benchmark
-requires the model to describe a target region with eight uniformly distributed
-points.  Changing this value alters the task semantics and produces scores that
-are not comparable with the published leaderboard.
+The per-sample accuracy is computed as `hits / expected_points`, where *hits*
+counts how many of the first *N* parsed points fall inside the reference mask.
 
 ```yaml
 dataset_kwargs:
   metric_mode: mask
-  expected_points: 8
+  points_mode: fixed
+  expected_points: 8    # any positive integer
 ```
 
 #### 2.3 `coord_mode`
@@ -84,6 +81,33 @@ Controls how the model's output coordinates are interpreted.  Must be set under
 ```yaml
 dataset_kwargs:
   metric_mode: mask
+  expected_points: 8
+  coord_mode: normalized
+```
+
+#### 2.4 `points_mode`
+
+Controls how many predicted points are submitted for scoring.  Default is
+`"adaptive"`.  Must be set under `dataset_kwargs`.
+
+| Value | Denominator | Behaviour | Requires `expected_points` |
+|---|---|---|---|
+| `"adaptive"` (default) | Number of points the model actually outputs | No truncation — model output determines `total_points` | Must NOT be present |
+| `"fixed"` | `expected_points` | Truncates to exactly N points | Yes (see 2.2) |
+
+When `"adaptive"` is used and the model outputs no points at all, `total_points`
+defaults to 1 (accuracy = 0).
+
+```yaml
+# Adaptive (default) — remove expected_points and points_mode
+dataset_kwargs:
+  metric_mode: mask
+  coord_mode: normalized
+
+# Fixed 8-point VABench-P
+dataset_kwargs:
+  metric_mode: mask
+  points_mode: fixed
   expected_points: 8
   coord_mode: normalized
 ```
@@ -163,16 +187,32 @@ Meaning:
    mapped to absolute pixels: `px = round(x / 1000 * width)`,
    `py = round(y / 1000 * height)`.
 
-3. **Truncate** — Only the first `expected_points` (= 8) parsed coordinates
-   are kept.  Fewer than 8 points in the output means fewer points are checked
-   against the mask, directly lowering the score.
+3. **Truncate** — In `"fixed"` mode, only the first `expected_points` parsed
+   coordinates are kept.  In `"adaptive"` mode, all parsed points are used.
+   Fewer points in the output directly affects the score.
 
 4. **Check** — Each pixel coordinate is looked up in the ground-truth binary
    mask.  A pixel with value > 0 counts as a hit; a pixel with value 0 (or
    out of image bounds) counts as a miss.
 
-5. **Score** — The per-sample accuracy is `hits / expected_points`.  With 8
-   points, possible scores range from 0.0 (all miss) through intermediate
-   steps (0.125, 0.25, …) to 1.0 (all hit).
+5. **Score** — The per-sample accuracy is `hits / total_points`.  With
+   `"fixed"` mode and N points, possible scores range from 0.0 (all miss)
+   through N equal steps to 1.0 (all hit).  With `"adaptive"` mode, the
+   denominator equals the number of points the model outputs.
+
+#### Per-sample field reference
+
+Each entry in `samples_vabench.json` contains the following fields.  Their
+meaning is the same in both `"fixed"` and `"adaptive"` modes unless noted.
+
+| Field | Meaning | `"fixed"` | `"adaptive"` |
+|---|---|---|---|
+| `accuracy` | `points_in_mask / total_points` | Same | Same |
+| `parsed_points` | Points extracted from model output | Same | Same |
+| `total_points` | Denominator used in accuracy | `expected_points` (e.g. 8) | Equal to `parsed_points` |
+| `points_in_mask` | Points that fell inside the mask | Same | Same |
+| `scored_points` | Points that scored (same as `points_in_mask`) | Same | Same |
+| `checked_points` | Points actually checked against the mask | `min(parsed_points, expected_points)` | Equal to `parsed_points` |
+| `processed_points` | The raw coordinate list submitted for scoring | Truncated to `expected_points` | All parsed points |
 
 **Website scale (0–100):** Raw scores are in \[0, 1\]; **website score = raw score × 100**.
